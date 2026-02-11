@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Tools.Vox2Pictoria": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Users\\Jeremy\\Art\\garden\\garden.vox\" -10 -10 false false false"
+    }
+  }
+}
