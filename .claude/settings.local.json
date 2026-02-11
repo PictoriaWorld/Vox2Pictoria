@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(if not exist \"C:\\\\Projects\\\\Vox2Pictoria\\\\Vox2Pictoria\\\\assets\\\\output\" mkdir \"C:\\\\Projects\\\\Vox2Pictoria\\\\Vox2Pictoria\\\\assets\\\\output\")",
-      "Bash(dotnet run:*)"
+      "Bash(dotnet run:*)",
+      "Bash(dir:*)",
+      "WebFetch(domain:download.blender.org)"
     ]
   }
 }
