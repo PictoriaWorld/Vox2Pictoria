@@ -144,7 +144,7 @@ Size your MagicaVoxel scene length and breadth to be multiples of 32, e.g. 128 x
 
 When sized with dimensions that are multiples of 32, a scene of size `length x breadth` requires a Pictoria property of `length/32 x breadth/32` tiles.
 
-**Pictoria properties have height limits.** Structures near the edge of a property must be shorter than structures near the center. This prevents structures from visually overlapping neighboring properties.
+Scene height: **Pictoria properties have height limits.** Structures near the edge of a property must be shorter than structures near the center. This prevents structures from visually overlapping neighboring properties.
 
 | Min distance from property edge (tiles) | Max structure height (voxels) |
 |------------------------------------------|-------------------------------|
@@ -172,15 +172,19 @@ Each top-level group or object in MagicaVoxel becomes a Pictoria structure. You 
 
 To be clear: objects in a top-level group become a single structure.
 
-By default, structures have a **Cuboid** bounding volume. To use a different shape, append the shape name after an underscore (e.g. `step_plusZPrism`). Right-prisms create slopes that players can walk up and down on.
+By default, structures have a **Cuboid** bounding volume. To use a different shape, append the shape name after an underscore (e.g. `step_plusZPrism`). In the list below, right-prisms create slopes that players can walk up and down on.
 
 | Shape suffix | Description |
 |-------------|-------------|
-| *(none)* | Cuboid (default) |
+| *(none)* | Cuboid |
 | `_minusXPrism` | Right-angle prism with vertical face facing the -X direction |
 | `_minusZPrism` | Right-angle prism with vertical face facing the -Z direction |
 | `_plusXPrism` | Right-angle prism with vertical face facing the +X direction |
 | `_plusZPrism` | Right-angle prism with vertical face facing the +Z direction |
+
+### Example Scene Organization 
+
+Note the top-level `grass` groups with multiple child objects (`<vox>`). Also note the object with a shape suffix, `step_plusZPrism`:
 
 ![Naming and grouping example in MagicaVoxel](Vox2Pictoria/assets/Example_Scene_Organization.png)
 
