@@ -9,7 +9,7 @@ public class VoxDataService
     //
     // - https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox-extension.txt
     // - https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt
-    public static async Task<Dictionary<string, StructureInfo>> ExtractStructureDataFromVox(VoxModel model, Options options)
+    public static Dictionary<string, StructureInfo> ExtractStructureDataFromVox(VoxModel model, Options options)
     {
         // Get frame infos
         //

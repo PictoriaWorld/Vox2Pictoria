@@ -2,6 +2,8 @@
 
 A command-line tool that converts [MagicaVoxel](https://ephtracy.github.io/) `.vox` files into art for [Pictoria](https://pictoria.world).
 
+![Vox2Pictoria](Vox2Pictoria/assets/vox_to_pictoria.png)
+
 ## Overview
 
 ### What is Pictoria?
@@ -180,7 +182,7 @@ By default, structures have a **Cuboid** bounding volume. To use a different sha
 | `_plusXPrism` | Right-angle prism with vertical face facing the +X direction |
 | `_plusZPrism` | Right-angle prism with vertical face facing the +Z direction |
 
-![Naming and grouping example in MagicaVoxel](Tools.Vox2Pictoria/assets/NamingAndGroupingExample.png)
+![Naming and grouping example in MagicaVoxel](Vox2Pictoria/assets/NamingAndGroupingExample.png)
 
 ### Example
 

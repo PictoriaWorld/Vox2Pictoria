@@ -21,7 +21,7 @@ internal class Program
             VoxModel model = reader.LoadModel(options.VoxAbsolutePath);
 
             // Extract structure data from vox file
-            Dictionary<string, StructureInfo> structureNameStructureInfoMap = await VoxDataService.ExtractStructureDataFromVox(model, options);
+            Dictionary<string, StructureInfo> structureNameStructureInfoMap = VoxDataService.ExtractStructureDataFromVox(model, options);
 
             // Compute render parameters from scene content
             BlenderRenderParameters fullSceneImageBlenderRenderParameters = ComputeFullSceneImageBlenderRenderParameters(structureNameStructureInfoMap, options);
