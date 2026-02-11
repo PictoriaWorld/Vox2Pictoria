@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34322.80
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tools.Vox2Pictoria", "Tools.Vox2Pictoria\Tools.Vox2Pictoria.csproj", "{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vox2Pictoria", "Vox2Pictoria\Vox2Pictoria.csproj", "{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
