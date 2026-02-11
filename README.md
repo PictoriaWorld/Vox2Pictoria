@@ -182,7 +182,7 @@ By default, structures have a **Cuboid** bounding volume. To use a different sha
 | `_plusXPrism` | Right-angle prism with vertical face facing the +X direction |
 | `_plusZPrism` | Right-angle prism with vertical face facing the +Z direction |
 
-![Naming and grouping example in MagicaVoxel](Vox2Pictoria/assets/NamingAndGroupingExample.png)
+![Naming and grouping example in MagicaVoxel](Vox2Pictoria/assets/Example_Scene_Organization.png)
 
 ### Example
 
