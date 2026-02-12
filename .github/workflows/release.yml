@@ -125,23 +125,26 @@ jobs:
           mkdir -p publish/blender
           cp -R "/Volumes/$MOUNT/Blender.app/Contents/MacOS/"* publish/blender/
           cp -R "/Volumes/$MOUNT/Blender.app/Contents/Resources/$BLENDER_MAJOR_MINOR" publish/blender/
+          cp -R "/Volumes/$MOUNT/Blender.app/Contents/Resources/lib" publish/blender/
           # Ensure a lowercase 'blender' binary exists (GetBlenderPath() expects it)
           if [ ! -f publish/blender/blender ]; then
             ln -s Blender publish/blender/blender
           fi
           hdiutil detach "/Volumes/$MOUNT" -quiet || true
 
-      - name: Download GPL license
+      - name: Copy GPL license
         shell: bash
-        run: |
-          curl -fSL -o publish/BLENDER_LICENSE.txt \
-            "https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt"
+        run: cp BLENDER_LICENSE.txt publish/
 
       - name: Fix permissions
         if: matrix.rid != 'win-x64'
         run: |
           chmod +x publish/Vox2Pictoria
           chmod +x publish/blender/blender || chmod +x publish/blender/Blender || true
+
+      - name: Bundle sample scene
+        shell: bash
+        run: cp Vox2Pictoria/assets/garden.vox publish/garden.vox
 
       - name: Package (Windows)
         if: matrix.rid == 'win-x64'

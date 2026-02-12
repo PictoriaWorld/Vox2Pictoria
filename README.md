@@ -9,46 +9,59 @@ A command-line tool that converts [MagicaVoxel](https://ephtracy.github.io/) `.v
 ## Overview
 
 ### What is Pictoria?
-Pictoria is a web-based, isometric world.
+Pictoria is a web-based, isometric social MMO.
 
 Users buy properties (plots of land) and build structures on them.
 
 Structures can be sized and positioned, as well as textured using uploaded 2D images.
 
 ### What is MagicaVoxel?
-MagicaVoxel is a free voxel (volumetric pixel/textured cube) art editor.
+MagicaVoxel is a free voxel (volumetric pixel/textured cube) art editor with a gentle learning curve.
 
 It allows users, including non-artists, to create beautiful 3D scenes, which can be exported as `.vox` files.
 
 ### What is Vox2Pictoria?
-Vox2Pictoria is a program that takes a `.vox` file and produces dimensions, locations and 2D images for creating structures in Pictoria.
+Vox2Pictoria is a program that takes a `.vox` file and produces locations, shapes, and 2D images for creating structures in Pictoria.
 
 ## Prerequisites
 - [MagicaVoxel 0.99.7.2](https://ephtracy.github.io/) (for creating `.vox` files)
 
 ## Installation
 
-1. Download the latest release for your platform from the [Releases](https://github.com/PictoriaWorld/Vox2Pictoria/releases) page.
+1. Download the latest release for your platform from the [Releases](https://github.com/PictoriaWorld/Vox2Pictoria/releases) page. 
+   - *Note: at the time of this writing, we've only tested the Window release, feel free to open an issue if you encounter problems on Mac or Linux.*
+   - *Also note: the releases are fairly large because they include Blender 4.5 LTS, which is required for high-quality rendering.*
 
-2. Extract the zip to a permanent location (e.g. `C:\Vox2Pictoria` on Windows or `~/Vox2Pictoria` on Mac).
+2. Extract the zipped folder. Rename it to `Vox2Pictoria` and move it to a permanent location (e.g. `C:\Vox2Pictoria` on Windows or `~/Vox2Pictoria` on Mac).
 
-3. Add the extracted folder to your system PATH: on Windows, search for "environment variables" in the Start menu, click *Edit the system environment variables > Environment Variables*, select `Path` under User variables, click *Edit*, and add the folder path. Restart your terminal afterward.
+3. Configure the executable for CLI usage:
 
-4. **Mac only** - open Terminal, then run the following commands to make the binaries executable and unblock them:
-```bash
-chmod +x ~/Vox2Pictoria/Vox2Pictoria ~/Vox2Pictoria/blender/blender
-xattr -cr ~/Vox2Pictoria
-```
-To add to PATH permanently, add `export PATH="$HOME/Vox2Pictoria:$PATH"` to your `~/.zshrc` file.
+   - **Windows**:
+     Search for "environment variables" in the Start menu, click *Edit the system environment variables > Environment Variables*, select `Path` under User variables, click *Edit*, and add the extracted folder path (e.g. `C:\Vox2Pictoria`). Restart your terminal afterward.
 
-5. Verify the installation by opening a new terminal and running:
-```bash
-Vox2Pictoria --help
-```
+   - **Mac**:
+     Open Terminal and run the following commands to make the binaries executable and unblock them:
+     ```bash
+     chmod +x ~/Vox2Pictoria/Vox2Pictoria ~/Vox2Pictoria/blender/blender
+     xattr -cr ~/Vox2Pictoria
+     ```
+     Add `export PATH="$HOME/Vox2Pictoria:$PATH"` to your `~/.zshrc` file to add to PATH permanently.
+
+   - **Linux**:
+     Make the binaries executable:
+     ```bash
+     chmod +x ~/Vox2Pictoria/Vox2Pictoria ~/Vox2Pictoria/blender/blender
+     ```
+     Add `export PATH="$HOME/Vox2Pictoria:$PATH"` to your `~/.bashrc` file to add to PATH permanently.
+
+4. Verify the installation by opening a new terminal and running:
+   ```pwsh
+   Vox2Pictoria --help
+   ```
 
 ## Usage
 
-1. Create a `.vox` file in MagicaVoxel, following the instructions in [MagicaVoxel Conventions](#magicavoxel-conventions) below.
+1. Create a `.vox` file in MagicaVoxel, following the instructions in [MagicaVoxel Scene Setup](#magicavoxel-scene-setup) below.
 
 2. In Pictoria, navigate to *create > properties > buy* and create a selection of tiles that will fit your MagicaVoxel scene.
 
@@ -60,19 +73,19 @@ Vox2Pictoria --help
 
 6. Run Vox2Pictoria in scene-test-run mode to preview the full property:
 
-```bash
-Vox2Pictoria --scene-test-run
-```
+   ```pwsh
+   Vox2Pictoria --scene-test-run
+   ```
 
 7. The command above generates a single 2D image of the full property in `temp/renders/scene.png`. Verify that it looks correct - colors, composition, etc. If you decide to make changes to your `.vox`, repeat step 6 to re-preview.
 
 8. Once satisfied, run a full render:
 
-```bash
-Vox2Pictoria --full-samples --full-resolution --min-tile-x <minTileX> --min-tile-z <minTileZ>
-```
+   ```pwsh
+   Vox2Pictoria --full-samples --full-resolution --min-tile-x <minTileX> --min-tile-z <minTileZ>
+   ```
 
-*Warning*: This can potentially take several hours to complete, depending on the complexity of your MagicaVoxel scene and the performance of your computer.
+   *Warning*: This can potentially take several hours to complete, depending on the complexity of your MagicaVoxel scene and the performance of your computer.
 
 9. When step 8 completes, you'll find output images in `bin/images/`. You'll also find `structure_infos.json` in `bin/` - this file contains all data you need to create structures in Pictoria (structure names, locations, and shapes).
 
@@ -95,7 +108,7 @@ Usage: Vox2Pictoria [vox-path] [options]
 | `--min-tile-z <int>` | `0` | Minimum tile-Z coordinate of the property in Pictoria. |
 | `--scene-test-run` | off | When specified, only a single 2D image of the full scene is rendered. Useful for previewing. |
 | `--full-samples` | off | When specified, renders images at maximum quality (2048 Blender Cycles samples) - specify for final render. When not specified, 32 samples are used (faster, useful for previewing). |
-| `--full-resolution` | off | When specified, renders a larger image for higher quality after resizing - specify for final render. When not specified, renders at a smaller image (faster, suitable for previewing). |
+| `--full-resolution` | off | When specified, renders a larger image for higher quality after resizing - specify for final render. When not specified, renders at a smaller image (faster, useful for previewing). |
 | `-o, --output <dir>` | Current directory | Output directory. |
 | `-h, --help` | N/A | Show usage information. |
 
@@ -136,19 +149,59 @@ Vox2Pictoria ../art/garden.vox --min-tile-x 3 --min-tile-z 5 --full-samples --fu
 
 The `bin/` directory contains the final output. The `temp/` directory contains intermediate files and can be deleted after processing.
 
-## MagicaVoxel Conventions
+## MagicaVoxel Scene Setup
+The following guidelines are for preparing a MagicaVoxel scene for use with Vox2Pictoria. They assume some familiarity with MagicaVoxel.
 
-### Scene Dimensions
+If you are new to MagicaVoxel, we highly recommend watching [MagicaVoxel: The Complete Guide (Tips & Tricks)](https://www.youtube.com/watch?v=G7TzsxY-7xE) first, for a comprehensive introduction to the tool.
 
-Each MagicaVoxel unit corresponds to 1/32 of a Pictoria tile. 
+### Coordinate System and Camera Orientation
+Here we'll set up MagicaVoxel's coordinate system and camera orientation to match what you'll see in Pictoria.
 
-Size your MagicaVoxel scene length and breadth to be multiples of 32, e.g. 128 x 256.
+1. At the bottom right of the MagicaVoxel window, click `Ortho` to switch to orthographic view.
+2. At the bottom right of the MagicaVoxel window again, ensure `Show Camera Ruler` (the three squares) and `Show View Cube` (the cube) are enabled.
+3. Adjust the rulers so that the horizontal ruler reads `+45` and the vertical ruler reads `-30` - this sets the camera to the classic isometric perspective used in games like Pictoria.
 
-When sized with dimensions that are multiples of 32, a scene of size `length x breadth` requires a Pictoria property of `length/32 x breadth/32` tiles.
+The bottome right of the MagicaVoxel window should now look like this:
 
-Scene height: **Pictoria properties have height limits.** Structures near the edge of a property must be shorter than structures near the center. This prevents structures from visually overlapping neighboring properties.
+![Example MagicaVoxel Axes](Vox2Pictoria/assets/example_magicavoxel_axes.png)
 
-| Min distance from property edge (tiles) | Max structure height (voxels) |
+Note that axes in MagicaVoxel differ from those in Pictoria. The mapping is as follows:
+
+| MagicaVoxel | Pictoria |
+|-------------|----------|
+| -Y          | +X       |
+| -X          | +Z       |
+| +Z          | +Y       |
+
+Vox2Pictoria handles this conversion automatically.
+
+### Scene Length and Breadth
+MagicaVoxel does not provide a way to "set scene length and breadth" directly. Instead, you have to ensure that the bounding box of objects you create matches your desired length and breadth.
+
+How do you determine your "desired length and breadth"?
+
+Before we get to that, this is how MagicaVoxel voxels map to Pictoria tiles: In Pictoria, each tile is 32x32 Pictoria cartesian units. Pictoria cartesian units map to MagicaVoxel voxels 1:1, so each Pictoria tile has the same length and breadth as a 32x32 square of MagicaVoxel voxels.
+
+With that in mind, your desired length and breadth should be multiples of 32 so that you can fill your property's tiles.
+
+How can you ensure that your MagicaVoxel scene's length and breadth are multiples of 32? 
+
+One approach is to place objects along the edges first - this could be temporary marker objects, or your actual objects - ensuring that the length and breadth of their bounding box are multiples of 32, e.g. 512 x 256. If you do take this approach, read [Scene Location](#scene-location) first so that your objects are located correctly.
+
+![Example MagicaVoxel Bounding Objects](Vox2Pictoria/assets/example_magicavoxel_bounding_objects.png)
+
+Note that since the length and breadth of your MagicaVoxel scene are multiples of 32, a Pictoria property of `length/32 x breadth/32` tiles will fit it perfectly.
+
+### Scene Height
+Like with length and breadth, there is no simple way to set your scene's height in MagicaVoxel.
+
+Instead you need to ensure that your objects fit within the height limits defined by Pictoria.
+
+Why does Pictoria have height limits? To prevent structures from visually overlapping neighboring properties, structures near the edge of a property must be shorter than structures near the center. 
+
+The following table maps distance from the property edge (in tiles) to maximum structure height (in MagicaVoxel voxels / Pictoria cartesian units, which, as noted earlier are equivalent):
+
+| Distance from property edge (tiles) | Max structure height (MagicaVoxel voxels/Pictoria cartesian units) |
 |------------------------------------------|-------------------------------|
 | 0 | 1 |
 | 1 | 52 |
@@ -166,15 +219,29 @@ Scene height: **Pictoria properties have height limits.** Structures near the ed
 | 13 | 365 |
 | 14+ | 384 (maximum) |
 
-For example, on a 5x5 tile property, the outermost ring of tiles can only hold structures 1 voxel tall, the next ring allows up to 52 voxels, and the center tile allows up to 78 voxels.
+For example, on a 5x5 tile property, the outermost ring of tiles can only hold structures 1 voxel tall, the next ring allows for structures up to 52 voxels tall, and the center tile allows for structures up to 78 voxels tall.
 
-### Scene Organization
+Remember that each tile is 32x32 voxels in length and breadth, so the "outermost ring of tiles" in MagicaVoxel corresponds to the outermost 32-voxel border of your scene.
 
-Each top-level group or object in MagicaVoxel becomes a Pictoria structure. You can name them however you like for your own organization - Vox2Pictoria assigns output names (`structure0`, `structure1`, etc.) automatically based on order.
+### Scene Location
+Along the length and breadth axes, your MagicaVoxel scene's center must be at the MagicaVoxel origin (0,0).
 
-To be clear: objects in a top-level group become a single structure.
+So for example, if your scene's length (x-axis) and breadth (y-axis) are 512x256 voxels, your scene must span from -256 to +256 on the x-axis, and -128 to +128 on the y-axis.
 
-By default, structures have a **Cuboid** bounding volume. To use a different shape, append the shape name after an underscore (e.g. `step_plusZPrism`). In the list below, right-prisms create slopes that players can walk up and down on.
+Along the height axis (z-axis), your scene should start at 0 and extend upwards - in other words, build directly above the MagicaVoxel ground plane.
+
+### Scene Outline
+In MagicaVoxel, you can create objects and groups of objects. These are displayed in an outline on the right side of the MagicaVoxel window.
+
+Vox2Pictoria converts each top-level group and object in the MagicaVoxel outline into a single Pictoria structure.
+
+Naming these top-level groups and objects is *mostly* up to you - Vox2Pictoria assigns output names (`structure0`, `structure1`, etc.) automatically based on order.
+
+The exception to naming is shape suffixes.
+
+By default, structures are **cuboid** shaped. To make a structure a different shape, append `_<shape name>` to the top-level group or object name (e.g. `step_plusZPrism`).
+
+The list below includes all available shape suffixes - note that right-angle prisms are slopes that players can walk up and down on:
 
 | Shape suffix | Description |
 |-------------|-------------|
@@ -184,20 +251,17 @@ By default, structures have a **Cuboid** bounding volume. To use a different sha
 | `_plusXPrism` | Right-angle prism with vertical face facing the +X direction |
 | `_plusZPrism` | Right-angle prism with vertical face facing the +Z direction |
 
-### Example Scene Organization 
+Below is an example outline. Note the top-level `grass` groups with multiple child objects (`<vox>`). Also note the object with a shape suffix, `step_plusZPrism`:
 
-Note the top-level `grass` groups with multiple child objects (`<vox>`). Also note the object with a shape suffix, `step_plusZPrism`:
+![Example MagicaVoxel Outline](Vox2Pictoria/assets/example_magicavoxel_outline.png)
 
-![Naming and grouping example in MagicaVoxel](Vox2Pictoria/assets/Example_Scene_Organization.png)
-
-### Example
-
-The repository includes `garden.vox` (assets/garden.vox), a sample MagicaVoxel scene you can explore to get an idea of how your scene should be organized.
+### Sample Scene
+When you download Vox2Pictoria from the [Releases](https://github.com/your-repo/Vox2Pictoria/releases) page, the downloaded zip file includes `garden.vox` (assets/garden.vox), a sample MagicaVoxel scene you can explore to get an idea of how your scene should be organized.
 
 You can also use it to test Vox2Pictoria by running:
 
 ```bash
-Vox2Pictoria garden.vox --scene-test-run
+Vox2Pictoria ./path/to/garden.vox --scene-test-run
 ```
 
 ## Development

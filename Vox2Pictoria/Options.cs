@@ -97,16 +97,16 @@ public class Options
             Usage: Vox2Pictoria [vox-path] [options]
 
             Arguments:
-              vox-path                 Path to .vox file (default: first .vox in current directory)
+              vox-path                     Path to the .vox file (default: first .vox in current directory)
 
             Options:
-              --min-tile-x <int>           Property min tile X (default: 0)
-              --min-tile-z <int>           Property min tile Z (default: 0)
-              --scene-test-run             Render full scene as a single image only, skip individual structure image rendering (default: false)
-              --full-samples           Use full render samples (2048 instead of 32) (default: false)
-              --full-resolution        Use full resolution (4x supersampling) (default: false)
-              -o, --output <dir>       Output directory (default: current directory)
-              -h, --help               Show this help
+              --min-tile-x <integer>       Minimum tile-X coordinate of the property in Pictoria (default: 0)
+              --min-tile-z <integer>       Minimum tile-Z coordinate of the property in Pictoria (default: 0)
+              --scene-test-run             When specified, only a single 2D image of the full scene is rendered. Useful for previewing. (default: off)
+              --full-samples               When specified, renders images at maximum quality (2048 Blender Cycles samples). When not specified, 32 samples are used (faster, useful for previewing). (default: off)
+              --full-resolution            When specified, renders a larger image for higher quality after resizing. When not specified, renders at a smaller image (faster, useful for previewing). (default: off)
+              -o, --output <dir>           Output directory (default: current directory)
+              -h, --help                   Show usage information
             """);
     }
 }
