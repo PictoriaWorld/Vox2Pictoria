@@ -1,5 +1,7 @@
 # Vox2Pictoria
 
+![Release](https://github.com/PictoriaWorld/Vox2Pictoria/actions/workflows/release.yml/badge.svg)
+
 A command-line tool that converts [MagicaVoxel](https://ephtracy.github.io/) `.vox` files into art for [Pictoria](https://pictoria.world).
 
 ![Vox2Pictoria](Vox2Pictoria/assets/vox_to_pictoria.png)
