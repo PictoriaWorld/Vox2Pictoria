@@ -1,21 +1,14 @@
 # TODO
 
-## Setup GitHub Actions for releases
-
-Automate release packaging that bundles Blender with Vox2Pictoria per platform:
-
-1. `dotnet publish` self-contained for each target (`win-x64`, `linux-x64`, `osx-arm64`)
-2. Download the matching Blender 4.5 LTS portable/zip for each platform
-3. Extract Blender into a `blender/` subdirectory next to the published executable
-4. Include Blender's GPL license in the package
-5. Zip each platform bundle and upload as a GitHub release artifact
-
-The code already looks for bundled Blender at `<exe dir>/blender/blender[.exe]` and falls back to PATH for development.
-
 ## Make it easier to download and use
 
 - Installers
 - GUI
+
+## Write tests
+
+- Unit tests for core logic
+- End-to-end tests for the full pipeline
 
 ## Try removing occluded faces hack
 
