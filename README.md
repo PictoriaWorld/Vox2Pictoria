@@ -63,23 +63,23 @@ Vox2Pictoria is a program that takes a `.vox` file and produces locations, shape
 
 1. Create a `.vox` file in MagicaVoxel, following the instructions in [MagicaVoxel Scene Setup](#magicavoxel-scene-setup) below.
 
-2. In Pictoria, navigate to *create > properties > buy* and create a selection of tiles that will fit your MagicaVoxel scene.
+2. Open a command line tool like Powershell on Windows or Terminal on Mac. Navigate to the directory your `.vox` is in.
 
-3. Note down the *Min tile-x* and *Min tile-z* coordinates of your tile selection in Pictoria.
-
-4. Buy the property in Pictoria.
-
-5. Open a command line tool like Powershell on Windows or Terminal on Mac. Navigate to the folder your `.vox` is in.
-
-6. Run Vox2Pictoria in scene-test-run mode to preview the full property:
+3. Run Vox2Pictoria in scene-test-run mode to preview the full property:
 
    ```pwsh
    Vox2Pictoria --scene-test-run
    ```
 
-7. The command above generates a single 2D image of the full property in `temp/renders/scene.png`. Verify that it looks correct - colors, composition, etc. If you decide to make changes to your `.vox`, repeat step 6 to re-preview.
+4. The command above generates a single 2D image of the full property in `<directory your .vox is in>/temp/renders/scene.png`. Verify that it looks correct - colors, composition, etc. If you decide to make changes to your `.vox`, repeat step 3 to re-preview.
 
-8. Once satisfied, run a full render:
+5. Once satisfied, navigate to www.pictoria.world in your browser. In Pictoria, navigate to *create > properties > buy* and create a selection of tiles that fits your MagicaVoxel scene.
+
+6. Note down the *Min tile-x* and *Min tile-z* coordinates of your tile selection in Pictoria.
+
+7. Buy the property in Pictoria.
+
+8. Run a full render in the directory your `.vox` is in, specifying the *Min tile-x* and *Min tile-z* coordinates you noted earlier:
 
    ```pwsh
    Vox2Pictoria --full-samples --full-resolution --min-tile-x <minTileX> --min-tile-z <minTileZ>
@@ -91,7 +91,7 @@ Vox2Pictoria is a program that takes a `.vox` file and produces locations, shape
 
 10. In Pictoria, with the property you created earlier selected (*create > properties > select*), navigate to *edit > structures > create*.
 
-11. Drag on the property to start a selection, then enter a structure's name, location and shape from the `structure_infos.json` file. Click *Select Images* and upload the corresponding image for the structure from the `bin/images/` folder. Finally, scroll down and click *buy*. Repeat this step for all structures in the `structure_infos.json` file.
+11. Drag on the property to start a selection, then enter a structure's name, location and shape from the `structure_infos.json` file. Click *Select Images* and upload the corresponding image for the structure from the `bin/images/` directory. Finally, scroll down and click *buy*. Repeat this step for all structures in the `structure_infos.json` file.
 
 12. Congratulations! You have successfully created a property in Pictoria using MagicaVoxel and Vox2Pictoria.
 
