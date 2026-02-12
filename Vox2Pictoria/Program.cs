@@ -9,8 +9,13 @@ namespace Vox2Pictoria;
 
 internal class Program
 {
+    private static Process? _blenderProcess;
+
     static async Task Main(string[] args)
     {
+        Console.CancelKeyPress += KillBlenderProcess; // Handles Ctrl+C
+        AppDomain.CurrentDomain.ProcessExit += KillBlenderProcess; // Handles clicking the X button on the terminal and normal process exit
+
         try
         {
             // Get options
@@ -177,10 +182,13 @@ internal class Program
             int outputImagePixelWidth = (int)Math.Ceiling(pictoriaIsometricWidth * supersamplingFactor) + 2 * padding;
             int outputImagePixelHeight = (int)Math.Ceiling(pictoriaIsometricHeight * supersamplingFactor) + 2 * padding;
 
-            // ortho_scale for this structure's isometric width
+            // ortho_scale: visible scene width for this structure's render
             //
-            // See explanation in ComputeFullSceneImageBlenderRenderParameters. The same formulas apply, we just use the structure's isometric width instead of the full scene's isometric width.
-            double orthoScale = outputImagePixelWidth / (Constants.PictoriaCartesianToBlenderWorldDivisor * Math.Sqrt(2));
+            // See explanation in ComputeFullSceneImageBlenderRenderParameters. 
+            // 
+            // Basically orthoScale is the width of the blender scene included in the image. We want to include the structure's full isometric width, plus padding.
+            double pictoriaIsometricWidthWithPadding = outputImagePixelWidth / (double)supersamplingFactor;
+            double orthoScale = pictoriaIsometricWidthWithPadding / (Constants.PictoriaCartesianToBlenderWorldDivisor * Math.Sqrt(2));
 
             // Camera centered on this structure's isometric center
             (double blenderCameraX, double blenderCameraY, double blenderCameraZ) = ComputeBlenderCameraPosition(pictoriaIsometricPolygon.MinX, pictoriaIsometricPolygon.MaxX, pictoriaIsometricPolygon.MinY, pictoriaIsometricPolygon.MaxY);
@@ -256,6 +264,7 @@ internal class Program
         process.StartInfo.RedirectStandardOutput = true;
         process.StartInfo.RedirectStandardError = true;
         process.StartInfo.CreateNoWindow = true;
+        _blenderProcess = process;
         process.Start();
 
         while (!process.StandardOutput.EndOfStream)
@@ -297,6 +306,7 @@ internal class Program
 
         string error = process.StandardError.ReadToEnd();
         process.WaitForExit();
+        _blenderProcess = null;
 
         if (process.ExitCode != 0)
         {
@@ -321,5 +331,10 @@ internal class Program
         // Fall back to PATH for development
         Console.WriteLine("Bundled Blender not found, falling back to PATH");
         return "blender";
+    }
+
+    private static void KillBlenderProcess(object? sender, EventArgs e)
+    {
+        try { _blenderProcess?.Kill(entireProcessTree: true); } catch { }
     }
 }

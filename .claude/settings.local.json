@@ -10,7 +10,15 @@
       "Bash(where:*)",
       "WebFetch(domain:magicavoxel.fandom.com)",
       "WebFetch(domain:twitter.com)",
-      "WebFetch(domain:x.com)"
+      "WebFetch(domain:x.com)",
+      "Bash(curl:*)",
+      "Bash(\"C:\\\\Program Files\\\\7-Zip\\\\7z.exe\" l \"C:\\\\Projects\\\\Vox2Pictoria\\\\blender-test.dmg\" -r)",
+      "Bash(findstr:*)",
+      "Bash(\"C:\\\\Program Files\\\\7-Zip\\\\7z.exe\" l \"C:\\\\Projects\\\\Vox2Pictoria\\\\blender-test.dmg\")",
+      "Bash(powershell -Command:*)",
+      "Bash(dotnet build:*)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

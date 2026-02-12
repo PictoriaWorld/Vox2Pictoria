@@ -1,16 +1,21 @@
 # TODO
 
-## Make it easier to download and use
+1. Make it easier to download and use
 
 - Installers
 - GUI
 
-## Write tests
+2. Write tests
 
 - Unit tests for core logic
 - End-to-end tests for the full pipeline
 
-## Try removing occluded faces hack
+3. Cleanup
+
+- Why are we including Vox2Pictoria.pdb in releases?
+- Github actions script that creates releases doesn't copy backtick fenced strings correctly - see release 1.0.1
+
+4. Try removing occluded faces hack
 
 The current pipeline renders each structure individually (neighbors hidden from camera via `visible_camera = False`), then patches boundary artifacts using a nearest-neighbor color sampling step (`FixOccludedFaces` in `PostProcessingService`).
 
