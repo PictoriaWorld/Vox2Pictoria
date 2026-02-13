@@ -317,3 +317,5 @@ The processing pipeline is fully sequential and deterministic:
 ## License
 
 [MIT](LICENSE)
+
+"Pictoria" and the Pictoria logo are trademarks of Pictoria and are not licensed under this license.

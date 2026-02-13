@@ -18,7 +18,11 @@
       "Bash(powershell -Command:*)",
       "Bash(dotnet build:*)",
       "WebFetch(domain:medium.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:developer.blender.org)",
+      "WebFetch(domain:www.blendernation.com)",
+      "WebFetch(domain:cgcookie.com)",
+      "Bash(git mv:*)"
     ]
   }
 }
