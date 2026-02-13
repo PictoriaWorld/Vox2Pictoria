@@ -239,7 +239,7 @@ Naming these top-level groups and objects is *mostly* up to you - the exception 
 
 By default, structures are **cuboid-shaped**. To make a structure a different shape, append `_<shape name>` to the top-level group or object name (e.g. `step_plusZPrism`).
 
-The list below includes all available shape suffixes - note that right-angle prisms are slopes that players can walk up and down:
+The list below includes all available shape suffixes - note that right-angle prisms are slopes that users can walk up and down:
 
 | Shape suffix | Description |
 |-------------|-------------|
@@ -254,6 +254,30 @@ Below is an example outline. Note the top-level `grass` groups with multiple chi
 ![Example MagicaVoxel Outline](Vox2Pictoria/assets/example_magicavoxel_outline.png)
 
 Note that Vox2Pictoria assigns output structure names (`structure0`, `structure1`, etc.) automatically based on order.
+
+### Limits on Number of Structures
+Pictoria limits the number of structures your property can have in a chunk, based on the number of tiles your property has in that chunk.
+
+What does this mean?
+
+Firstly, let's define a chunk: a chunk is a 16x16 square of tiles in Pictoria. When buying a property (*create > properties > buy*), you can toggle "Show Chunk Borders" to see chunk borders:
+
+![Example Pictoria Chunk Structure Limits](Vox2Pictoria/assets/example_pictoria_chunk_structure_limits.png)
+
+For every 2 tiles your property has in a chunk, you can build 1 structure on your property, in that chunk.
+
+Note that if your property has an odd number of tiles in a chunk, the number of structures you can build on the property, in that chunk, is rounded up.
+
+Using the above image as an example, the property in it spans 4 chunks: 
+
+- In the left chunk it has 50 tiles, allowing for 25 structures (50/2).
+- In the top chunk it has 5 tiles, allowing for 3 structures (5/2 rounded up).
+- In the right chunk it has 1 tile, allowing for 1 structure (1/2 rounded up).
+- In the bottom chunk it has 10 tiles, allowing for 5 structures (10/2).
+
+Why does this limit exist?
+
+It is necessary to prevent users from creating excessive numbers of structures in small areas, which could lead to performance issues for some users.
 
 ### Sample Scene
 When you download Vox2Pictoria from the [Releases](https://github.com/PictoriaWorld/Vox2Pictoria/releases) page, the downloaded zip file includes `<downloaded folder>/garden.vox`, a sample MagicaVoxel scene you can explore to get an idea of how your scene should be organized.
