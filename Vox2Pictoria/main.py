@@ -80,6 +80,9 @@ else:
     print("No GPU found, falling back to CPU rendering")
     bpy.context.scene.cycles.device = 'CPU'
 
+# Setup color management - Blender 4.x defaults to AgX, but Filmic is closer to MagicaVoxel's ACES Filmic tone mapping
+bpy.context.scene.view_settings.view_transform = 'Filmic'
+
 # Setup world
 # Setup world - set surface color to white and strength to 1
 bpy.context.scene.world.node_tree.nodes['Background'].inputs[0].default_value = (1, 1, 1, 1)
