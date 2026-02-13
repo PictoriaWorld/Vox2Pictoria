@@ -134,7 +134,7 @@ jobs:
 
       - name: Copy GPL license
         shell: bash
-        run: cp BLENDER_LICENSE.txt publish/
+        run: cp thirdPartyLicenses/BLENDER_LICENSE.txt publish/
 
       - name: Fix permissions
         if: matrix.rid != 'win-x64'
