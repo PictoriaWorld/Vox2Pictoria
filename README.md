@@ -29,7 +29,7 @@ Vox2Pictoria is a program that takes a `.vox` file and produces locations, shape
 ## Installation
 
 1. Download the latest release for your platform from the [Releases](https://github.com/PictoriaWorld/Vox2Pictoria/releases) page. 
-   - *Note: at the time of this writing, we've only tested the Windows release; feel free to open an issue if you encounter problems on Mac or Linux.*
+   - *Note: at the time of this writing, we've only tested the Windows release; feel free to open an issue if you encounter problems on Mac/Linux.*
    - *Also note: the releases are fairly large because they include Blender 4.5 LTS, which is used for rendering.*
 
 2. Extract the zipped folder. Rename it to `Vox2Pictoria` and move it to a permanent location (e.g. `C:\Vox2Pictoria` on Windows or `~/Vox2Pictoria` on Mac/Linux).
@@ -37,7 +37,7 @@ Vox2Pictoria is a program that takes a `.vox` file and produces locations, shape
 3. Configure the executable for CLI usage:
 
    - **Windows**:
-     Search for "environment variables" in the Start menu, click *Edit the system environment variables > Environment Variables*, select `Path` under User variables, click *Edit*, and add the extracted folder path (e.g. `C:\Vox2Pictoria`). Restart your terminal afterward.
+     Search for "environment variables" in the start menu, click *Edit the system environment variables > Environment Variables*, select `Path` under user variables, click *Edit*, and add the extracted folder path (e.g. `C:\Vox2Pictoria`). Restart your terminal afterward.
 
    - **Mac**:
      Open Terminal and run the following commands to make the binaries executable and unblock them:

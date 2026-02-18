@@ -144,7 +144,7 @@ jobs:
 
       - name: Bundle sample scene
         shell: bash
-        run: cp Vox2Pictoria/assets/garden.vox publish/garden.vox
+        run: cp Vox2Pictoria/examples/garden/garden.vox publish/garden.vox
 
       - name: Package (Windows)
         if: matrix.rid == 'win-x64'
