@@ -10,8 +10,8 @@ namespace Vox2Pictoria;
 
 public class StructureObjService
 {
-    public static async Task GenerateStructureObjsAsync(Dictionary<string, StructureInfo> structureNameStructureInfoMap, ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
-        Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap, VoxModel model, Options options)
+    public static async Task GenerateStructureObjsAsync(Dictionary<string, StructureInfo> structureNameStructureInfoMap, ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
+        Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap, VoxModel model, Options options, Dictionary<int, string> paletteIDToSpecialMaterialNameMap)
     {
         Console.WriteLine("Generating structure objs...");
 
@@ -21,25 +21,26 @@ public class StructureObjService
         // Generate structure objs
         DateTime currentTime = DateTime.Now;
         await Parallel.ForEachAsync(structureNameStructureInfoMap.Values, (structureInfo, CancellationToken) => GenerateStructureObjAsync(structureInfo, model, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
-            voxelFrameVisibleVoxelInfoMap, paletteNumberTextureCoordNumberMap, textureCoords, options.ObjOutputDirectory));
+            voxelFrameVisibleVoxelInfoMap, paletteNumberTextureCoordNumberMap, textureCoords, options.ObjOutputDirectory, paletteIDToSpecialMaterialNameMap));
         Console.WriteLine($"Structure obj generation duration: {(DateTime.Now - currentTime).TotalSeconds} s");
     }
 
-    private static async ValueTask GenerateStructureObjAsync(StructureInfo structureInfo, VoxModel model, ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
-        Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap, Dictionary<int, int> paletteNumberTextureCoordNumberMap, List<TextureCoords> textureCoords, string outputDirectory)
+    private static async ValueTask GenerateStructureObjAsync(StructureInfo structureInfo, VoxModel model, ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
+        Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap, Dictionary<int, int> paletteNumberTextureCoordNumberMap, List<TextureCoords> textureCoords, string outputDirectory,
+        Dictionary<int, string> paletteIDToSpecialMaterialNameMap)
     {
         GeneralObjInfo objInfo = new();
 
         // Create obj info
         if (structureInfo.ShapeInfo.ChildShapeInfos.Count == 0)
         {
-            AddVerticesAndFacesForShape(structureInfo.ShapeInfo, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, voxelFrameVisibleVoxelInfoMap, paletteNumberTextureCoordNumberMap, null, ref objInfo);
+            AddVerticesAndFacesForShape(structureInfo.ShapeInfo, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, voxelFrameVisibleVoxelInfoMap, paletteNumberTextureCoordNumberMap, null, ref objInfo, paletteIDToSpecialMaterialNameMap);
         }
         else
         {
             object objInfoLock = new();
             Parallel.ForEach(structureInfo.ShapeInfo.ChildShapeInfos, childShapeInfo => AddVerticesAndFacesForShape(childShapeInfo, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
-                voxelFrameVisibleVoxelInfoMap, paletteNumberTextureCoordNumberMap, objInfoLock, ref objInfo));
+                voxelFrameVisibleVoxelInfoMap, paletteNumberTextureCoordNumberMap, objInfoLock, ref objInfo, paletteIDToSpecialMaterialNameMap));
         }
 
         // Generate obj content
@@ -55,8 +56,9 @@ public class StructureObjService
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void AddVerticesAndFacesForShape(ShapeInfo shapeInfo, ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
-        Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap, Dictionary<int, int> paletteNumberTextureCoordNumberMap, object? objInfoLock, ref GeneralObjInfo target)
+    private static void AddVerticesAndFacesForShape(ShapeInfo shapeInfo, ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
+        Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap, Dictionary<int, int> paletteNumberTextureCoordNumberMap, object? objInfoLock, ref GeneralObjInfo target,
+        Dictionary<int, string> paletteIDToSpecialMaterialNameMap)
     {
         FrameInfo? frameInfo = shapeInfo.FrameInfo;
         if (frameInfo == null || frameInfo.VoxelFrameIndex < 0)
@@ -104,50 +106,53 @@ public class StructureObjService
             // Get frame face visibility
             //
             // This is the visibility of the face before considering other shapes (frames) and structures
-            CuboidFaceVisibilities transformedFaceVisibility = transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap[new Vector3Int(transformedVoxelBoundingBox.MinX, transformedVoxelBoundingBox.MinY,
+            TransformedVoxelInfo transformedVoxelInfo = transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap[new Vector3Int(transformedVoxelBoundingBox.MinX, transformedVoxelBoundingBox.MinY,
                 transformedVoxelBoundingBox.MinZ)]; // Should not throw
+            CuboidFaceVisibilities transformedFaceVisibility = transformedVoxelInfo.FaceVisibilities;
 
             // Add vertices and faces
             //
-            // Note that if within the frame, we've already ascertained that the voxel is obscurred in a direction, we can skip it. Also, if voxel is not at edge of frame, we do not need to check whether 
+            // Note that if within the frame, we've already ascertained that the voxel is obscurred in a direction, we can skip it. Also, if voxel is not at edge of frame, we do not need to check whether
             // it is obscured by an adjacent shape.
-            int texCoordsNumber = paletteNumberTextureCoordNumberMap[voxelIndexVisibleVoxelInfo.Value.PaletteNumber];
+            int paletteNumber = voxelIndexVisibleVoxelInfo.Value.PaletteNumber;
+            int texCoordsNumber = paletteNumberTextureCoordNumberMap[paletteNumber];
+            string? materialName = paletteIDToSpecialMaterialNameMap.GetValueOrDefault(paletteNumber);
             if (transformedFaceVisibility.MinusX == FaceVisibility.Visible ||
                 transformedFaceVisibility.MinusX == FaceVisibility.VisibleAtFrameEdge &&
                 !SharedObjService.CheckIfFaceObscuredByAdjacentShape(transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, transformedVoxelBoundingBox.MinX - 1, transformedVoxelBoundingBox.MinY, transformedVoxelBoundingBox.MinZ)) // -x face
             {
-                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices0, ref voxelVertices4, ref voxelVertices7, ref voxelVertices3, texCoordsNumber, 1, objInfoLock);
+                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices0, ref voxelVertices4, ref voxelVertices7, ref voxelVertices3, texCoordsNumber, 1, objInfoLock, materialName);
             }
             if (transformedFaceVisibility.PlusX == FaceVisibility.Visible ||
                 transformedFaceVisibility.PlusX == FaceVisibility.VisibleAtFrameEdge &&
                 !SharedObjService.CheckIfFaceObscuredByAdjacentShape(transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, transformedVoxelBoundingBox.MaxX, transformedVoxelBoundingBox.MinY, transformedVoxelBoundingBox.MinZ)) // +x face
             {
-                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices5, ref voxelVertices1, ref voxelVertices2, ref voxelVertices6, texCoordsNumber, 2, objInfoLock);
+                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices5, ref voxelVertices1, ref voxelVertices2, ref voxelVertices6, texCoordsNumber, 2, objInfoLock, materialName);
             }
             if (transformedFaceVisibility.MinusY == FaceVisibility.Visible ||
                 transformedFaceVisibility.MinusY == FaceVisibility.VisibleAtFrameEdge &&
                 !SharedObjService.CheckIfFaceObscuredByAdjacentShape(transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, transformedVoxelBoundingBox.MinX, transformedVoxelBoundingBox.MinY - 1, transformedVoxelBoundingBox.MinZ)) // -y face
             {
-                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices0, ref voxelVertices1, ref voxelVertices5, ref voxelVertices4, texCoordsNumber, 3, objInfoLock);
+                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices0, ref voxelVertices1, ref voxelVertices5, ref voxelVertices4, texCoordsNumber, 3, objInfoLock, materialName);
             }
             if (transformedFaceVisibility.PlusY == FaceVisibility.Visible ||
                 transformedFaceVisibility.PlusY == FaceVisibility.VisibleAtFrameEdge &&
                 !SharedObjService.CheckIfFaceObscuredByAdjacentShape(transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, transformedVoxelBoundingBox.MinX, transformedVoxelBoundingBox.MaxY, transformedVoxelBoundingBox.MinZ)) // +y face
             {
-                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices3, ref voxelVertices7, ref voxelVertices6, ref voxelVertices2, texCoordsNumber, 4, objInfoLock);
+                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices3, ref voxelVertices7, ref voxelVertices6, ref voxelVertices2, texCoordsNumber, 4, objInfoLock, materialName);
             }
             if (transformedFaceVisibility.MinusZ == FaceVisibility.Visible ||
                 transformedFaceVisibility.MinusZ == FaceVisibility.VisibleAtFrameEdge &&
                 (neighbourTransformedMinZ = transformedVoxelBoundingBox.MinZ - 1) >= 0 && // Hide ground faces
                 !SharedObjService.CheckIfFaceObscuredByAdjacentShape(transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, transformedVoxelBoundingBox.MinX, transformedVoxelBoundingBox.MinY, neighbourTransformedMinZ)) // -z face
             {
-                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices0, ref voxelVertices3, ref voxelVertices2, ref voxelVertices1, texCoordsNumber, 5, objInfoLock);
+                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices0, ref voxelVertices3, ref voxelVertices2, ref voxelVertices1, texCoordsNumber, 5, objInfoLock, materialName);
             }
             if (transformedFaceVisibility.PlusZ == FaceVisibility.Visible ||
                 transformedFaceVisibility.PlusZ == FaceVisibility.VisibleAtFrameEdge &&
                 !SharedObjService.CheckIfFaceObscuredByAdjacentShape(transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, transformedVoxelBoundingBox.MinX, transformedVoxelBoundingBox.MinY, transformedVoxelBoundingBox.MaxZ)) // +z face
             {
-                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices4, ref voxelVertices5, ref voxelVertices6, ref voxelVertices7, texCoordsNumber, 6, objInfoLock);
+                SharedObjService.AddVerticesAndFacesForDirection(ref target, ref voxelVertices4, ref voxelVertices5, ref voxelVertices6, ref voxelVertices7, texCoordsNumber, 6, objInfoLock, materialName);
             }
         }
     }
@@ -157,7 +162,6 @@ public class StructureObjService
         // Material
         stringBuilder.AppendLine("# material");
         stringBuilder.AppendLine("mtllib structures.mtl");
-        stringBuilder.AppendLine("usemtl palette");
 
         // Normals
         stringBuilder.AppendLine("\n# normals\nvn -1 0 0\nvn 1 0 0\nvn 0 0 1\nvn 0 0 -1\nvn 0 -1 0\nvn 0 1 0");
@@ -187,9 +191,25 @@ public class StructureObjService
             stringBuilder.AppendLine();
         }
 
-        // Faces
+        // Faces - grouped by material
         stringBuilder.AppendLine("\n# faces");
-        foreach (QuadFace face in objInfo.QuadFaces)
+
+        // Write default material faces
+        stringBuilder.AppendLine("usemtl palette");
+        WriteFaces(stringBuilder, objInfo.DefaultMaterialFaces);
+
+        // Write special material face groups
+        foreach (KeyValuePair<string, List<QuadFace>> specialMaterialGroup in objInfo.SpecialMaterialFaces)
+        {
+            stringBuilder.Append("usemtl ");
+            stringBuilder.AppendLine(specialMaterialGroup.Key);
+            WriteFaces(stringBuilder, specialMaterialGroup.Value);
+        }
+    }
+
+    private static void WriteFaces(StringBuilder stringBuilder, List<QuadFace> faces)
+    {
+        foreach (QuadFace face in faces)
         {
             // Triangle 1
             stringBuilder.Append("f ");

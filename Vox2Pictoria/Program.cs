@@ -1,14 +1,15 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using FileToVoxCore.Vox;
+using FileToVoxCore.Vox.Chunks;
 
 namespace Vox2Pictoria;
 
 internal class Program
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
     private static Process? _blenderProcess;
 
     static async Task Main(string[] args)
@@ -20,6 +21,9 @@ internal class Program
         {
             // Get options
             var options = new Options(args);
+
+            // Combine multiple .vox files if --combine is used
+            if (options.CombineInputs.Count > 0) VoxCombiner.Combine(options);
 
             // Load vox file
             var reader = new VoxReader();
@@ -35,7 +39,7 @@ internal class Program
             ComputePerStructureBlenderRenderParameters(structureNameStructureInfoMap, options);
 
             // Create structure infos json
-            string json = JsonSerializer.Serialize(structureNameStructureInfoMap.Values, new JsonSerializerOptions { WriteIndented = true });
+            string json = JsonSerializer.Serialize(structureNameStructureInfoMap.Values, _jsonOptions);
             string jsonFilePath = Path.Combine(options.BinDirectory, "structure_infos.json");
             if (!Directory.Exists(options.BinDirectory)) Directory.CreateDirectory(options.BinDirectory);
             File.WriteAllText(jsonFilePath, json);
@@ -44,26 +48,56 @@ internal class Program
             // Create obj output directory
             if (!Directory.Exists(options.ObjOutputDirectory)) Directory.CreateDirectory(options.ObjOutputDirectory);
 
-            // Write per-structure render params to a temporary file in the ObjOutputDirectory (consumed by main.py, not end-user facing)
-            Dictionary<string, BlenderRenderParameters> blenderRenderParamsMap = [];
-            foreach (StructureInfo structureInfo in structureNameStructureInfoMap.Values) blenderRenderParamsMap[structureInfo.Name] = structureInfo.BlenderRenderParameters!;
-            string renderParamsJson = JsonSerializer.Serialize(blenderRenderParamsMap, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(Path.Combine(options.ObjOutputDirectory, "render_params.json"), renderParamsJson);
+            // Build per-structure render parameters
+            Dictionary<string, BlenderRenderParameters> structureBlenderRenderParameters = [];
+            foreach (StructureInfo structureInfo in structureNameStructureInfoMap.Values) structureBlenderRenderParameters[structureInfo.Name] = structureInfo.BlenderRenderParameters!;
+
+            // Write blender_options.json (options for main.py)
+            var blenderOptions = new BlenderOptions
+            {
+                ObjDirectory = options.ObjOutputDirectory,
+                RendersDirectory = options.RendersDirectory,
+                BinDirectory = options.BinDirectory,
+                SkipIndividualRenders = options.SceneTestRun,
+                FullSamples = options.FullSamples,
+                OrthoScale = fullSceneImageBlenderRenderParameters.OrthoScale,
+                ResolutionWidth = fullSceneImageBlenderRenderParameters.ResolutionWidth,
+                ResolutionHeight = fullSceneImageBlenderRenderParameters.ResolutionHeight,
+                CameraX = fullSceneImageBlenderRenderParameters.CameraX,
+                CameraY = fullSceneImageBlenderRenderParameters.CameraY,
+                CameraZ = fullSceneImageBlenderRenderParameters.CameraZ,
+                SunEnergy = options.SunEnergy,
+                SunColor = options.SunColor,
+                AmbientStrength = options.AmbientLightStrength,
+                AmbientLightColor = options.AmbientLightColor,
+                EmissionCameraCap = options.EmissionCameraCap,
+                EmissionBounceMultiplier = options.EmissionBounceMultiplier,
+                ViewTransform = options.ToneMapper,
+                StructureRenderParameters = structureBlenderRenderParameters
+            };
+            File.WriteAllText(options.BlenderOptionsPath, JsonSerializer.Serialize(blenderOptions, _jsonOptions));
+
+            // Extract glass palette indices, used when determining if a voxel is occluded (glass voxels don't occlude)
+            HashSet<int> glassPaletteIndices = [];
+            foreach (MaterialChunk materialChunk in model.MaterialChunks)
+            {
+                if (materialChunk.Type == MaterialType._glass) glassPaletteIndices.Add(materialChunk.Id);
+            }
 
             // Create voxel-frame voxel-infos map
-            Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap = VoxelGridService.CreateVoxelFrameVisibleVoxelInfoMap(model);
+            Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap = VoxelGridService.CreateVoxelFrameVisibleVoxelInfoMap(model, glassPaletteIndices);
 
             // Create voxel grid
             //
             // Used for checking if voxels are occupied
-            ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap = [];
-            VoxelGridService.GetVisibleVoxelsGrid(structureNameStructureInfoMap, model, voxelFrameVisibleVoxelInfoMap, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap);
+            ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap = [];
+            VoxelGridService.GetVisibleVoxelsGrid(structureNameStructureInfoMap, model, voxelFrameVisibleVoxelInfoMap, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, glassPaletteIndices);
 
             // Generate mtls
-            MtlService.GenerateMtls(options);
+            Dictionary<int, string> paletteIDToSpecialMaterialNameMap = MtlService.GenerateMtls(options, model);
 
             // Generate structure objs
-            await StructureObjService.GenerateStructureObjsAsync(structureNameStructureInfoMap, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, voxelFrameVisibleVoxelInfoMap, model, options);
+            await StructureObjService.GenerateStructureObjsAsync(structureNameStructureInfoMap, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, voxelFrameVisibleVoxelInfoMap, model, options, paletteIDToSpecialMaterialNameMap);
 
             if (!options.SceneTestRun)
             {
@@ -76,7 +110,7 @@ internal class Program
             }
 
             // Render objs
-            RenderObjs(options, fullSceneImageBlenderRenderParameters);
+            RenderObjs(options.BlenderOptionsPath);
 
             if (!options.SceneTestRun)
             {
@@ -195,7 +229,7 @@ internal class Program
 
             structureInfo.SetBlenderRenderParameters(new BlenderRenderParameters(orthoScale, outputImagePixelWidth, outputImagePixelHeight, blenderCameraX, blenderCameraY, blenderCameraZ));
 
-            Console.WriteLine($"Per-structure render params for {structureInfo.Name}: orthoScale={orthoScale:F4}, resolution={outputImagePixelWidth}x{outputImagePixelHeight}, camera=({blenderCameraX:F4}, {blenderCameraY:F4}, {blenderCameraZ:F4})");
+            Console.WriteLine($"Per-structure render parameters for {structureInfo.Name}: orthoScale={orthoScale:F4}, resolution={outputImagePixelWidth}x{outputImagePixelHeight}, camera=({blenderCameraX:F4}, {blenderCameraY:F4}, {blenderCameraZ:F4})");
         }
     }
 
@@ -246,20 +280,15 @@ internal class Program
         return (cameraX, cameraY, cameraZ);
     }
 
-    private static void RenderObjs(Options options, BlenderRenderParameters fullSceneImageBlenderRenderParameters)
+    private static void RenderObjs(string blenderOptionsPath)
     {
-        // Get main.py path
         string mainPyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "main.py");
         Console.WriteLine($"main.py path: {mainPyPath}");
 
         using Process process = new();
 
         process.StartInfo.FileName = GetBlenderPath();
-        string orthoScaleString = fullSceneImageBlenderRenderParameters.OrthoScale.ToString(CultureInfo.InvariantCulture);
-        string cameraXString = fullSceneImageBlenderRenderParameters.CameraX.ToString(CultureInfo.InvariantCulture);
-        string cameraYString = fullSceneImageBlenderRenderParameters.CameraY.ToString(CultureInfo.InvariantCulture);
-        string cameraZString = fullSceneImageBlenderRenderParameters.CameraZ.ToString(CultureInfo.InvariantCulture);
-        process.StartInfo.Arguments = $"--background --python {mainPyPath} {options.ObjOutputDirectory} {options.RendersDirectory} {options.BinDirectory} {options.SceneTestRun} {options.FullSamples} {orthoScaleString} {fullSceneImageBlenderRenderParameters.ResolutionWidth} {fullSceneImageBlenderRenderParameters.ResolutionHeight} {cameraXString} {cameraYString} {cameraZString}";
+        process.StartInfo.Arguments = $"--background --python {mainPyPath} {blenderOptionsPath}";
         process.StartInfo.UseShellExecute = false;
         process.StartInfo.RedirectStandardOutput = true;
         process.StartInfo.RedirectStandardError = true;

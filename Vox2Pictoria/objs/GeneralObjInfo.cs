@@ -5,7 +5,8 @@ namespace Vox2Pictoria;
 public struct GeneralObjInfo
 {
     public Dictionary<Vector3, int> VertexListNumberMap = [];
-    public List<QuadFace> QuadFaces = [];
+    public List<QuadFace> DefaultMaterialFaces = [];
+    public Dictionary<string, List<QuadFace>> SpecialMaterialFaces = [];
 
     public GeneralObjInfo()
     {

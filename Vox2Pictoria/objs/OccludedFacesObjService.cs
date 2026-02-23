@@ -8,8 +8,7 @@ namespace Vox2Pictoria;
 // We could save a couple of seconds / build if we combine this class with StructureObjService, specifically the AddVerticesAndFacesForShape methods. But the convenience of having a separate method outweighs the couple seconds speed up.
 public class OccludedFacesObjService
 {
-    public static async Task GenerateOccludedFacesObjsAsync(Dictionary<string, StructureInfo> structureNameStructureInfoMap,
-        ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
+    public static async Task GenerateOccludedFacesObjsAsync(Dictionary<string, StructureInfo> structureNameStructureInfoMap, ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
         Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap, Options options)
     {
         Console.WriteLine("Generating occluded faces objs...");
@@ -21,7 +20,7 @@ public class OccludedFacesObjService
         Console.WriteLine($"Occluded faces obj generation duration: {(DateTime.Now - currentTime).TotalSeconds} s");
     }
 
-    private static async ValueTask GenerateOccludedFacesObjAsync(StructureInfo structureInfo, ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
+    private static async ValueTask GenerateOccludedFacesObjAsync(StructureInfo structureInfo, ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
         Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap, string outputDirectory)
     {
         GeneralObjInfo objInfo = new();
@@ -57,7 +56,7 @@ public class OccludedFacesObjService
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void AddVerticesAndFacesForShape(ShapeInfo shapeInfo, ShapeInfo? parentShapeInfo, ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
+    private static void AddVerticesAndFacesForShape(ShapeInfo shapeInfo, ShapeInfo? parentShapeInfo, ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap,
         Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap, object? objInfoLock, ref GeneralObjInfo target)
     {
         FrameInfo? frameInfo = shapeInfo.FrameInfo;
@@ -107,7 +106,7 @@ public class OccludedFacesObjService
             //
             // This is the visibility of the face before considering other shapes (frames) and structures
             CuboidFaceVisibilities frameFaceVisibility = transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap[new Vector3Int(transformedVoxelBoundingBox.MinX, transformedVoxelBoundingBox.MinY,
-                transformedVoxelBoundingBox.MinZ)]; // Should not throw
+                transformedVoxelBoundingBox.MinZ)].FaceVisibilities; // Should not throw
 
             // TODO how do we ignore if shape is from same structure?
 
@@ -159,7 +158,7 @@ public class OccludedFacesObjService
         // Faces
         stringBuilder.AppendLine("\n# faces");
         stringBuilder.AppendLine("usemtl red_mtl");
-        foreach (QuadFace face in objInfo.QuadFaces)
+        foreach (QuadFace face in objInfo.DefaultMaterialFaces)
         {
             // Triangle 1
             stringBuilder.Append("f ");
