@@ -1,11 +1,3 @@
 namespace Vox2Pictoria;
 
-public struct QuadFace
-{
-    public int VertexIndex1;
-    public int VertexIndex2;
-    public int VertexIndex3;
-    public int VertexIndex4;
-    public int TextureCoordsNumber;
-    public int NormalNumber;
-}
+public readonly record struct QuadFace(int VertexIndex1, int VertexIndex2, int VertexIndex3, int VertexIndex4, int TextureCoordsNumber, int NormalNumber);

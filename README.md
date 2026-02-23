@@ -55,7 +55,7 @@ Vox2Pictoria is a program that takes a `.vox` file and produces locations, shape
      Add `export PATH="$HOME/Vox2Pictoria:$PATH"` to your `~/.bashrc` file to add to PATH permanently.
 
 4. Verify the installation by opening a new terminal and running:
-   ```bash
+   ```
    Vox2Pictoria --help
    ```
 
@@ -67,7 +67,7 @@ Vox2Pictoria is a program that takes a `.vox` file and produces locations, shape
 
 3. Run Vox2Pictoria in scene-test-run mode to preview the full scene:
 
-   ```bash
+   ```
    Vox2Pictoria --scene-test-run
    ```
 
@@ -81,7 +81,7 @@ Vox2Pictoria is a program that takes a `.vox` file and produces locations, shape
 
 8. Run a full render in the directory your `.vox` is in, specifying the *Min tile-x* and *Min tile-z* coordinates you noted earlier:
 
-   ```bash
+   ```
    Vox2Pictoria --full-samples --full-resolution --min-tile-x <minTileX> --min-tile-z <minTileZ>
    ```
 
@@ -115,22 +115,22 @@ Usage: Vox2Pictoria [vox-path] [options]
 ### Examples
 
 Generate a single image of the full scene for previewing, assumes `.vox` is in the current directory:
-```bash
+```
 Vox2Pictoria --scene-test-run
 ```
 
 Generate all structure images at low quality for previewing, assumes `.vox` is in the current directory:
-```bash
+```
 Vox2Pictoria
 ```
 
 Generate all structure images at maximum quality for Pictoria, assumes `.vox` is in the current directory:
-```bash
+```
 Vox2Pictoria --min-tile-x <minTileX> --min-tile-z <minTileZ> --full-samples --full-resolution
 ```
 
 Specify a vox file, tile coordinates, and output directory:
-```bash
+```
 Vox2Pictoria ../art/garden.vox --min-tile-x 3 --min-tile-z 5 --full-samples --full-resolution -o ./output
 ```
 
@@ -164,6 +164,8 @@ Here we'll set up MagicaVoxel's coordinate system and camera orientation to matc
 The bottom right of the MagicaVoxel window should now look like this:
 
 ![Example MagicaVoxel Axes](Vox2Pictoria/assets/example_magicavoxel_axes.png)
+
+Of course, when you are editing your scene, you can switch to any camera orientation you like. The important thing here is to know that this is the orientation that your scene will be rendered in for Pictoria.
 
 Note that axes in MagicaVoxel differ from those in Pictoria. The mapping is as follows:
 
@@ -284,9 +286,21 @@ When you download Vox2Pictoria from the [Releases](https://github.com/PictoriaWo
 
 You can also use it to test Vox2Pictoria by running:
 
-```bash
+```
 Vox2Pictoria ./path/to/garden.vox --scene-test-run
 ```
+
+### Materials
+MagicaVoxel supports several material types. Of those types, Vox2Pictoria can currently render the following:
+
+| Material | Supported Properties | Notes |
+|----------|---------------------|-------|
+| Diffuse | *(default)* | Standard opaque material.|
+| Metal | Metallic, Roughness, Specular, IOR | For metallic surfaces like gold, copper, steel. |
+| Emit | Emission, Power | For stuff like lamps. MagicaVoxel's ldr option is not supported. |
+| Glass | Roughness, IOR, Transparency | MagicaVoxel's media, density and phase options are not supported. **Note: glass support is untested and may not match MagicaVoxel's preview exactly.** |
+
+The following material types are **not** currently supported: Blend and Cloud. Palette colors set to these types will render as diffuse.
 
 ## Development
 
@@ -298,14 +312,14 @@ This is for advanced users who want to build or modify Vox2Pictoria.
 
 ### Building
 
-```bash
+```
 cd src/Vox2Pictoria
 dotnet build
 ```
 
 ### Running from Source
 
-```bash
+```
 cd src/Vox2Pictoria
 dotnet run -- [vox-path] [options]
 ```

@@ -6,11 +6,11 @@ namespace Vox2Pictoria;
 public class VoxelCoordinatesService
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool CheckIfUntransformedNeighbourOccupied(float neighbourUntransformedMinX, float neighbourUntransformedMinY, float neighbourUntransformedMinZ, int untransformedXLength, int untransformedXAndYLengthsProduct,
-        VoxelData voxelFrame)
+    public static bool CheckIfUntransformedNeighbourOccupiedAndOpaque(float neighbourUntransformedMinX, float neighbourUntransformedMinY, float neighbourUntransformedMinZ, int untransformedXLength, int untransformedXAndYLengthsProduct,
+        VoxelData voxelFrame, HashSet<int> glassPaletteIndices)
     {
         int adjacentVoxelIndex = UntransformedVoxelMinCoordinatesToVoxelIndex(neighbourUntransformedMinX, neighbourUntransformedMinY, neighbourUntransformedMinZ, untransformedXLength, untransformedXAndYLengthsProduct);
-        return voxelFrame.Colors.ContainsKey(adjacentVoxelIndex);
+        return voxelFrame.Colors.TryGetValue(adjacentVoxelIndex, out byte paletteNumber) && !glassPaletteIndices.Contains(paletteNumber);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

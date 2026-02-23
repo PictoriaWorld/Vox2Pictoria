@@ -6,7 +6,7 @@ namespace Vox2Pictoria;
 
 public class VoxelGridService
 {
-    public static Dictionary<int, Dictionary<int, VisibleVoxelInfo>> CreateVoxelFrameVisibleVoxelInfoMap(VoxModel model)
+    public static Dictionary<int, Dictionary<int, VisibleVoxelInfo>> CreateVoxelFrameVisibleVoxelInfoMap(VoxModel model, HashSet<int> glassPaletteIndices)
     {
         DateTime currentTime = DateTime.Now;
 
@@ -18,13 +18,13 @@ public class VoxelGridService
         }
 
         // Process voxel frames
-        Parallel.ForEach(model.VoxelFrames, (voxelFrame, state, index) => CreateVoxelIndexVisibleVoxelInfoMap(voxelFrame, voxelFrameVisibleVoxelInfoMap[(int)index]));
+        Parallel.ForEach(model.VoxelFrames, (voxelFrame, state, index) => CreateVoxelIndexVisibleVoxelInfoMap(voxelFrame, voxelFrameVisibleVoxelInfoMap[(int)index], glassPaletteIndices));
 
         Console.WriteLine($"Create voxel-frame visible-face-info map duration: {(DateTime.Now - currentTime).TotalSeconds} s");
         return voxelFrameVisibleVoxelInfoMap;
     }
 
-    public static void CreateVoxelIndexVisibleVoxelInfoMap(VoxelData voxelFrame, Dictionary<int, VisibleVoxelInfo> voxelIndexVisibleVoxelInfoMap)
+    public static void CreateVoxelIndexVisibleVoxelInfoMap(VoxelData voxelFrame, Dictionary<int, VisibleVoxelInfo> voxelIndexVisibleVoxelInfoMap, HashSet<int> glassPaletteIndices)
     {
         int untransformedXLength = voxelFrame.VoxelsWide;
         int untransformedYLength = voxelFrame.VoxelsTall;
@@ -40,18 +40,18 @@ public class VoxelGridService
             // Get untransformed coordinates
             Cuboid untransformedVoxelBoundingBox = VoxelCoordinatesService.VoxelIndexToUntransformedVoxelBoundingBox(voxelIndexPaletteNumber.Key, untransformedXLength, untransformedXAndYLengthsProduct);
 
-            CuboidFaceVisibilities cuboidFaceVisibilities = new(GetMinusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupied(untransformedVoxelBoundingBox.MinX - 1, untransformedVoxelBoundingBox.MinY,
-                    untransformedVoxelBoundingBox.MinZ, untransformedXLength, untransformedXAndYLengthsProduct, voxelFrame), untransformedVoxelBoundingBox.MinX),
-                GetPlusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupied(untransformedVoxelBoundingBox.MaxX, untransformedVoxelBoundingBox.MinY, untransformedVoxelBoundingBox.MinZ, untransformedXLength,
-                    untransformedXAndYLengthsProduct, voxelFrame), untransformedVoxelBoundingBox.MinX, untransformedMaxMinXCoordinate),
-                GetMinusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupied(untransformedVoxelBoundingBox.MinX, untransformedVoxelBoundingBox.MinY - 1, untransformedVoxelBoundingBox.MinZ,
-                    untransformedXLength, untransformedXAndYLengthsProduct, voxelFrame), untransformedVoxelBoundingBox.MinY),
-                GetPlusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupied(untransformedVoxelBoundingBox.MinX, untransformedVoxelBoundingBox.MaxY, untransformedVoxelBoundingBox.MinZ, untransformedXLength,
-                    untransformedXAndYLengthsProduct, voxelFrame), untransformedVoxelBoundingBox.MinY, untransformedMaxMinYCoordinate),
-                GetMinusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupied(untransformedVoxelBoundingBox.MinX, untransformedVoxelBoundingBox.MinY, untransformedVoxelBoundingBox.MinZ - 1,
-                    untransformedXLength, untransformedXAndYLengthsProduct, voxelFrame), untransformedVoxelBoundingBox.MinZ),
-                GetPlusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupied(untransformedVoxelBoundingBox.MinX, untransformedVoxelBoundingBox.MinY, untransformedVoxelBoundingBox.MaxZ, untransformedXLength,
-                    untransformedXAndYLengthsProduct, voxelFrame), untransformedVoxelBoundingBox.MinZ, untransformedMaxMinZCoordinate));
+            CuboidFaceVisibilities cuboidFaceVisibilities = new(GetMinusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupiedAndOpaque(untransformedVoxelBoundingBox.MinX - 1, untransformedVoxelBoundingBox.MinY,
+                    untransformedVoxelBoundingBox.MinZ, untransformedXLength, untransformedXAndYLengthsProduct, voxelFrame, glassPaletteIndices), untransformedVoxelBoundingBox.MinX),
+                GetPlusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupiedAndOpaque(untransformedVoxelBoundingBox.MaxX, untransformedVoxelBoundingBox.MinY, untransformedVoxelBoundingBox.MinZ, untransformedXLength,
+                    untransformedXAndYLengthsProduct, voxelFrame, glassPaletteIndices), untransformedVoxelBoundingBox.MinX, untransformedMaxMinXCoordinate),
+                GetMinusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupiedAndOpaque(untransformedVoxelBoundingBox.MinX, untransformedVoxelBoundingBox.MinY - 1, untransformedVoxelBoundingBox.MinZ,
+                    untransformedXLength, untransformedXAndYLengthsProduct, voxelFrame, glassPaletteIndices), untransformedVoxelBoundingBox.MinY),
+                GetPlusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupiedAndOpaque(untransformedVoxelBoundingBox.MinX, untransformedVoxelBoundingBox.MaxY, untransformedVoxelBoundingBox.MinZ, untransformedXLength,
+                    untransformedXAndYLengthsProduct, voxelFrame, glassPaletteIndices), untransformedVoxelBoundingBox.MinY, untransformedMaxMinYCoordinate),
+                GetMinusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupiedAndOpaque(untransformedVoxelBoundingBox.MinX, untransformedVoxelBoundingBox.MinY, untransformedVoxelBoundingBox.MinZ - 1,
+                    untransformedXLength, untransformedXAndYLengthsProduct, voxelFrame, glassPaletteIndices), untransformedVoxelBoundingBox.MinZ),
+                GetPlusFaceVisibility(VoxelCoordinatesService.CheckIfUntransformedNeighbourOccupiedAndOpaque(untransformedVoxelBoundingBox.MinX, untransformedVoxelBoundingBox.MinY, untransformedVoxelBoundingBox.MaxZ, untransformedXLength,
+                    untransformedXAndYLengthsProduct, voxelFrame, glassPaletteIndices), untransformedVoxelBoundingBox.MinZ, untransformedMaxMinZCoordinate));
 
             if (cuboidFaceVisibilities.AnyVisible())
             {
@@ -65,33 +65,33 @@ public class VoxelGridService
     }
 
     public static void GetVisibleVoxelsGrid(Dictionary<string, StructureInfo> structureNameStructureInfoMap, VoxModel model, Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap,
-        ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap)
+        ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesVoxelInfoMap, HashSet<int> glassPaletteIndices)
     {
         // Populate transformed voxel grid
         //
         // We use this collection to determine which faces can be omitted as well as to create occluded faces objs
         DateTime currentTime = DateTime.Now;
-        Parallel.ForEach(structureNameStructureInfoMap.Values, structureInfo => AddStructureVoxels(structureInfo, model, voxelFrameVisibleVoxelInfoMap, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap));
+        Parallel.ForEach(structureNameStructureInfoMap.Values, structureInfo => AddStructureVoxels(structureInfo, model, voxelFrameVisibleVoxelInfoMap, transformedVisibleVoxelMinCoordinatesVoxelInfoMap, glassPaletteIndices));
         Console.WriteLine($"Populate transformed voxel grid duration: {(DateTime.Now - currentTime).TotalSeconds} s");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static void AddStructureVoxels(StructureInfo structureInfo, VoxModel model, Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap,
-        ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap)
+    private static void AddStructureVoxels(StructureInfo structureInfo, VoxModel model, Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap,
+        ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesVoxelInfoMap, HashSet<int> glassPaletteIndices)
     {
         if (structureInfo.ShapeInfo.ChildShapeInfos.Count == 0)
         {
-            AddShapeVoxels(structureInfo.ShapeInfo, model, voxelFrameVisibleVoxelInfoMap, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap);
+            AddShapeVoxels(structureInfo.ShapeInfo, model, voxelFrameVisibleVoxelInfoMap, transformedVisibleVoxelMinCoordinatesVoxelInfoMap, glassPaletteIndices);
         }
         else
         {
-            Parallel.ForEach(structureInfo.ShapeInfo.ChildShapeInfos, childShapeInfo => AddShapeVoxels(childShapeInfo, model, voxelFrameVisibleVoxelInfoMap, transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap));
+            Parallel.ForEach(structureInfo.ShapeInfo.ChildShapeInfos, childShapeInfo => AddShapeVoxels(childShapeInfo, model, voxelFrameVisibleVoxelInfoMap, transformedVisibleVoxelMinCoordinatesVoxelInfoMap, glassPaletteIndices));
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void AddShapeVoxels(ShapeInfo shapeInfo, VoxModel model, Dictionary<int, Dictionary<int, VisibleVoxelInfo>> voxelFrameVisibleVoxelInfoMap,
-        ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap)
+        ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesVoxelInfoMap, HashSet<int> glassPaletteIndices)
     {
         if (shapeInfo.FrameInfo == null || shapeInfo.FrameInfo.VoxelFrameIndex < 0)
         {
@@ -128,7 +128,7 @@ public class VoxelGridService
             Vector3Int transformedMinCoordinates = VoxelCoordinatesService.UntransformedToTransformedVoxelMinCoordinates(ref untransformedVoxelBoundingBox, ref transformMatrix);
 
             // Add
-            transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap[transformedMinCoordinates] = cuboidFaceVisibilities;
+            transformedVisibleVoxelMinCoordinatesVoxelInfoMap[transformedMinCoordinates] = new TransformedVoxelInfo(cuboidFaceVisibilities, glassPaletteIndices.Contains(voxelIndexFaceInfo.Value.PaletteNumber));
         }
     }
 

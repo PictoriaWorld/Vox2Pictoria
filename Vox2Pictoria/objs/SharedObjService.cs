@@ -7,7 +7,8 @@ namespace Vox2Pictoria;
 public class SharedObjService
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void AddVerticesAndFacesForDirection(ref GeneralObjInfo objInfo, ref Vector3 v1, ref Vector3 v2, ref Vector3 v3, ref Vector3 v4, int texCoordsNumber = 0, int normalNumber = 0, object? objInfoLock = null)
+    public static void AddVerticesAndFacesForDirection(ref GeneralObjInfo objInfo, ref Vector3 v1, ref Vector3 v2, ref Vector3 v3, ref Vector3 v4, int texCoordsNumber = 0, int normalNumber = 0, object? objInfoLock = null,
+        string? materialName = null)
     {
         bool lockTaken = false;
         try
@@ -22,10 +23,20 @@ public class SharedObjService
             int indexV3 = TryAddVertexAndGetNumber(vertexListNumberMap, ref v3);
             int indexV4 = TryAddVertexAndGetNumber(vertexListNumberMap, ref v4);
 
-            // Add faces
+            // Add face to the appropriate collection
             //
             // Note that each voxel face corresponds to two triangular obj faces
-            objInfo.QuadFaces.Add(new QuadFace { VertexIndex1 = indexV1, VertexIndex2 = indexV2, VertexIndex3 = indexV3, VertexIndex4 = indexV4, TextureCoordsNumber = texCoordsNumber, NormalNumber = normalNumber });
+            QuadFace face = new(indexV1, indexV2, indexV3, indexV4, texCoordsNumber, normalNumber);
+            if (materialName == null) objInfo.DefaultMaterialFaces.Add(face);
+            else
+            {
+                if (!objInfo.SpecialMaterialFaces.TryGetValue(materialName, out List<QuadFace>? group))
+                {
+                    group = [];
+                    objInfo.SpecialMaterialFaces[materialName] = group;
+                }
+                group.Add(face);
+            }
         }
         finally
         {
@@ -47,10 +58,11 @@ public class SharedObjService
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool CheckIfFaceObscuredByAdjacentShape(ConcurrentDictionary<Vector3Int, CuboidFaceVisibilities> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, int neighbourTransformedMinX, int neighbourTransformedMinY,
+    public static bool CheckIfFaceObscuredByAdjacentShape(ConcurrentDictionary<Vector3Int, TransformedVoxelInfo> transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap, int neighbourTransformedMinX, int neighbourTransformedMinY,
         int neighbourTransformedMinZ)
     {
-        // Visible if neighbour is empty
-        return transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap.ContainsKey(new Vector3Int(neighbourTransformedMinX, neighbourTransformedMinY, neighbourTransformedMinZ));
+        // Visible if neighbour is empty or glass
+        return transformedVisibleVoxelMinCoordinatesFrameFaceVisibilityMap.TryGetValue(new Vector3Int(neighbourTransformedMinX, neighbourTransformedMinY, neighbourTransformedMinZ), out var info)
+            && !info.IsGlass;
     }
 }
