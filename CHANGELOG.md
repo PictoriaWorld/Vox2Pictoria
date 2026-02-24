@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.0] - 24-02-2026
+### Added
+- Support for emissive, glass, and metal materials.
+- `--combine` option to combine multiple `.vox` files into one `.vox` file (works around MagicaVoxel's project dimensions limit).
+- `--sun-energy`, `--sun-color`, `--ambient-light-strength`, `--ambient-light-color` options for lighting control.
+- `--emission-camera-cap` and `--emission-bounce-multiplier` options for emissive material tuning.
+- `--tone-mapper` option to choose between AgX, Filmic, and Standard tone mapping.
+- Maze example in `examples/maze/`.
+
+### Changes
+- Moved project to `src/Vox2Pictoria/` layout.
+- Moved `assets/` and `examples/` to the repository root.
+- Improved README documentation.
+
 ## [1.0.3] - 13-02-2026
 ### Changes
 - Blender now uses Filmic color management instead of AgX so it matches MagicaVoxel's window preview more closely.
