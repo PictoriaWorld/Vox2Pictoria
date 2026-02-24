@@ -4,7 +4,7 @@
 
 A command-line tool that converts [MagicaVoxel](https://ephtracy.github.io/) `.vox` files into art for [Pictoria](https://pictoria.world).
 
-![Vox2Pictoria](Vox2Pictoria/assets/vox_to_pictoria.png)
+![Vox2Pictoria](./assets/vox_to_pictoria.png)
 
 ## Overview
 
@@ -104,11 +104,19 @@ Usage: Vox2Pictoria [vox-path] [options]
 | Argument / Option | Default | Description |
 |-------------------|---------|-------------|
 | `vox-path` | First `.vox` in current directory | Path to the `.vox` file. |
-| `--min-tile-x <int>` | `0` | Minimum tile-X coordinate of the property in Pictoria. |
-| `--min-tile-z <int>` | `0` | Minimum tile-Z coordinate of the property in Pictoria. |
+| `--combine "vox-path-1 cx cy" "vox-path-2 cx cy" ...` | N/A | Combine multiple `.vox` files into one scene. Each argument is a quoted string with the `.vox` path and its MagicaVoxel X/Y center position. All `.vox` files must share the same palette, also, after combining they must be a rectangle. This option exists to work around MagicaVoxel's project dimensions limit. When specified, this option takes precedence over `vox-path`. |
+| `--min-tile-x <integer>` | `0` | Minimum tile-X coordinate of the property in Pictoria. |
+| `--min-tile-z <integer>` | `0` | Minimum tile-Z coordinate of the property in Pictoria. |
 | `--scene-test-run` | off | When specified, only a single 2D image of the full scene is rendered. Useful for previewing. |
-| `--full-samples` | off | When specified, renders images at maximum quality (2048 Blender Cycles samples) - specify for final render. When not specified, 32 samples are used (faster, useful for previewing). |
-| `--full-resolution` | off | When specified, renders a larger image for higher quality after resizing - specify for final render. When not specified, renders a smaller image (faster, useful for previewing). |
+| `--full-samples` | off | When specified, renders images at maximum quality (2048 Blender Cycles samples). When not specified, 32 samples are used (faster, useful for previewing). |
+| `--full-resolution` | off | When specified, renders a larger image for higher quality after resizing. When not specified, renders a smaller image (faster, useful for previewing). |
+| `--sun-energy <float>` | `12` | Blender sun lamp energy. |
+| `--sun-color <R> <G> <B>` | `1 1 1` | Blender sun lamp color as three floats 0-1. |
+| `--ambient-light-strength <float>` | `0.2` | Blender ambient light strength. |
+| `--ambient-light-color <R> <G> <B>` | `1 1 1` | Blender ambient light color as three floats 0-1. |
+| `--emission-camera-cap <float>` | `3.5` | Max emission strength visible to camera in Blender. Controls how bright emissive surfaces appear. Use this to avoid blowout. |
+| `--emission-bounce-multiplier <float>` | `3` | Multiplier for emission strength on bounced light in Blender. Controls how strongly emissive surfaces light up surroundings. |
+| `--tone-mapper <name>` | `AgX` | Blender tone mapper: AgX, Filmic, or Standard. Affects how colors appear in rendered images. |
 | `-o, --output <dir>` | Current directory | Output directory. |
 | `-h, --help` | N/A | Show usage information. |
 
@@ -163,7 +171,7 @@ Here we'll set up MagicaVoxel's coordinate system and camera orientation to matc
 
 The bottom right of the MagicaVoxel window should now look like this:
 
-![Example MagicaVoxel Axes](Vox2Pictoria/assets/example_magicavoxel_axes.png)
+![Example MagicaVoxel Axes](./assets/example_magicavoxel_axes.png)
 
 Of course, when you are editing your scene, you can switch to any camera orientation you like. The important thing here is to know that this is the orientation that your scene will be rendered in for Pictoria.
 
@@ -190,7 +198,7 @@ How can you ensure that your MagicaVoxel scene's length and breadth are multiple
 
 The recommended approach is to place objects along the edges first - this could be temporary marker objects, or your actual objects - ensuring that the length and breadth of their bounding box are multiples of 32, e.g. 512 x 256. If you do take this approach, read [Scene Location](#scene-location) first so that your objects are located correctly.
 
-![Example MagicaVoxel Bounding Objects](Vox2Pictoria/assets/example_magicavoxel_bounding_objects.png)
+![Example MagicaVoxel Bounding Objects](./assets/example_magicavoxel_bounding_objects.png)
 
 Note that since the length and breadth of your MagicaVoxel scene are multiples of 32, a Pictoria property of `length/32 x breadth/32` tiles will fit it perfectly.
 
@@ -253,7 +261,7 @@ The list below includes all available shape suffixes - note that right-angle pri
 
 Below is an example outline. Note the top-level `grass` groups with multiple child objects (`<vox>`). Also note the object with a shape suffix, `step_plusZPrism`:
 
-![Example MagicaVoxel Outline](Vox2Pictoria/assets/example_magicavoxel_outline.png)
+![Example MagicaVoxel Outline](./assets/example_magicavoxel_outline.png)
 
 Note that Vox2Pictoria assigns output structure names (`structure0`, `structure1`, etc.) automatically based on order.
 
@@ -264,7 +272,7 @@ What does this mean?
 
 Firstly, let's define a chunk: a chunk is a 16x16 square of tiles in Pictoria. When buying a property (*create > properties > buy*), you can toggle "Show Chunk Borders" to see chunk borders:
 
-![Example Pictoria Chunk Structure Limits](Vox2Pictoria/assets/example_pictoria_chunk_structure_limits.png)
+![Example Pictoria Chunk Structure Limits](./assets/example_pictoria_chunk_structure_limits.png)
 
 For every 2 tiles your property has in a chunk, you can build 1 structure on your property, in that chunk.
 
@@ -334,8 +342,9 @@ src/Vox2Pictoria/
 ├── coordinateSystems/            # Coordinate transformations (MagicaVoxel ↔ Pictoria ↔ isometric)
 ├── geometry/                     # Math types (Cuboid, Vector3Int, Matrix4x4Int, IsometricPolygon)
 ├── magicavoxelData/              # .vox file data extraction (StructureInfo, ShapeInfo, FrameInfo)
+├── vox/                          # .vox file parsing, writing, and combining (for --combine)
 ├── voxels/                       # Voxel grid processing and face visibility calculation
-├── objs/                         # OBJ file generation (structure meshes, volumes, occluded faces)
+├── objs/                         # OBJ/MTL file generation (structure meshes, volumes, occluded faces, materials)
 ├── postProcessing/               # Image cropping and scaling using volume/occluded renders
 └── renderingPrimitives/          # Quad/triangle face definitions for OBJ generation
 ```
@@ -344,13 +353,15 @@ src/Vox2Pictoria/
 
 The processing pipeline is fully sequential and deterministic:
 
-1. **VoxDataService** parses the `.vox` scene graph (transforms, groups, shapes, frames) and builds a `StructureInfo` hierarchy
-2. **VoxelGridService** creates a spatial grid of all visible voxels with per-face visibility flags (`Visible`, `VisibleAtFrameEdge`, `Hidden`)
-3. **StructureObjService** generates textured OBJ meshes by iterating visible voxels and emitting only exposed faces
-4. **VolumeObjService** generates bounding volume OBJs (cuboids or prisms) for each structure
-5. **OccludedFacesObjService** generates OBJs for faces hidden between adjacent structures (used for post-processing color correction)
-6. **Blender** (`main.py`) renders all OBJs with Cycles: first volumes and occluded faces at 32 samples with per-structure cameras, then individual structures at the configured sample count
-7. **PostProcessingService** uses the volume renders to determine crop bounds, corrects boundary pixel colors using the occluded face renders, then crops and scales the structure renders to their final dimensions
+1. **VoxCombiner** (optional, when `--combine` is used) parses multiple `.vox` files at the raw chunk level, remaps node/model IDs, applies center translations, and writes a single combined `.vox`
+2. **VoxDataService** parses the `.vox` scene graph (transforms, groups, shapes, frames) and builds a `StructureInfo` hierarchy
+3. **VoxelGridService** creates a spatial grid of all visible voxels with per-face visibility flags (`Visible`, `VisibleAtFrameEdge`, `Hidden`)
+4. **MtlService** generates MTL material stubs and a `special_material_properties.json` file for emissive, glass, and metal materials
+5. **StructureObjService** generates textured OBJ meshes by iterating visible voxels and emitting only exposed faces, grouped by material
+6. **VolumeObjService** generates bounding volume OBJs (cuboids or prisms) for each structure
+7. **OccludedFacesObjService** generates OBJs for faces hidden between adjacent structures (used for post-processing color correction)
+8. **Blender** (`main.py`) renders all OBJs with Cycles, applying special material properties (emission, glass, metal) from the JSON file
+9. **PostProcessingService** uses the volume renders to determine crop bounds, corrects boundary pixel colors using the occluded face renders, then crops and scales the structure renders to their final dimensions
 
 ## License
 
