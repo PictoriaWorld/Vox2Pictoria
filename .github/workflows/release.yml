@@ -85,7 +85,7 @@ jobs:
 
       - name: Publish
         run: >
-          dotnet publish Vox2Pictoria/Vox2Pictoria.csproj
+          dotnet publish src/Vox2Pictoria/Vox2Pictoria.csproj
           -c Release
           -r ${{ matrix.rid }}
           --self-contained true
@@ -144,7 +144,7 @@ jobs:
 
       - name: Bundle sample scene
         shell: bash
-        run: cp Vox2Pictoria/examples/garden/garden.vox publish/garden.vox
+        run: cp examples/garden/garden.vox publish/garden.vox
 
       - name: Package (Windows)
         if: matrix.rid == 'win-x64'

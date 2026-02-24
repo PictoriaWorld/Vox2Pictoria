@@ -161,24 +161,24 @@ public class Options
             Usage: Vox2Pictoria [vox-path] [options]
 
             Arguments:
-              vox-path                                 Path to the .vox file (default: first .vox in current directory)
+              vox-path                                                          Path to the .vox file (default: first .vox in current directory)
 
             Options:
-              --combine "path cx cy" ...               Combine multiple .vox files into one scene. Each argument is a quoted string with the .vox path and its MagicaVoxel X/Y center position. All .vox files must share the same palette, also, after combining they must be a rectangle. This option exists to work around MagicaVoxel's project dimensions limit. When specified, this option takes precedence over vox-path.
-              --min-tile-x <integer>                   Minimum tile-X coordinate of the property in Pictoria (default: 0)
-              --min-tile-z <integer>                   Minimum tile-Z coordinate of the property in Pictoria (default: 0)
-              --scene-test-run                         When specified, only a single 2D image of the full scene is rendered. Useful for previewing. (default: off)
-              --full-samples                           When specified, renders images at maximum quality (2048 Blender Cycles samples). When not specified, 32 samples are used (faster, useful for previewing). (default: off)
-              --full-resolution                        When specified, renders a larger image for higher quality after resizing. When not specified, renders at a smaller image (faster, useful for previewing). (default: off)
-              --sun-energy <float>                     Blender sun lamp energy (default: 12)
-              --sun-color <R> <G> <B>                  Blender sun lamp color as three floats 0-1 (default: 1 1 1)
-              --ambient-light-strength <float>         Blender ambient light strength (default: 0.2)
-              --ambient-light-color <R> <G> <B>        Blender ambient light color as three floats 0-1 (default: 1 1 1)
-              --emission-camera-cap <float>            Max emission strength visible to camera in Blender. Controls how bright emissive surfaces appear. Use this to avoid blowout. (default: 3.5)
-              --emission-bounce-multiplier <float>     Multiplier for emission strength on bounced light in Blender. Controls how strongly emissive surfaces light up surroundings. (default: 3h)
-              --tone-mapper <name>                     Blender tone mapper: AgX, Filmic, or Standard. Affects how colors appear in rendered images. (default: AgX)
-              -o, --output <dir>                       Output directory (default: current directory)
-              -h, --help                               Show usage information
+              --combine "vox-path-1 cx cy" "vox-path-2 cx cy" ...               Combine multiple .vox files into one scene. Each argument is a quoted string with the .vox path and its MagicaVoxel X/Y center position. All .vox files must share the same palette, also, after combining they must be a rectangle. This option exists to work around MagicaVoxel's project dimensions limit. When specified, this option takes precedence over vox-path.
+              --min-tile-x <integer>                                            Minimum tile-X coordinate of the property in Pictoria (default: 0)
+              --min-tile-z <integer>                                            Minimum tile-Z coordinate of the property in Pictoria (default: 0)
+              --scene-test-run                                                  When specified, only a single 2D image of the full scene is rendered. Useful for previewing. (default: off)
+              --full-samples                                                    When specified, renders images at maximum quality (2048 Blender Cycles samples). When not specified, 32 samples are used (faster, useful for previewing). (default: off)
+              --full-resolution                                                 When specified, renders a larger image for higher quality after resizing. When not specified, renders a smaller image (faster, useful for previewing). (default: off)
+              --sun-energy <float>                                              Blender sun lamp energy (default: 12)
+              --sun-color <R> <G> <B>                                           Blender sun lamp color as three floats 0-1 (default: 1 1 1)
+              --ambient-light-strength <float>                                  Blender ambient light strength (default: 0.2)
+              --ambient-light-color <R> <G> <B>                                 Blender ambient light color as three floats 0-1 (default: 1 1 1)
+              --emission-camera-cap <float>                                     Max emission strength visible to camera in Blender. Controls how bright emissive surfaces appear. Use this to avoid blowout. (default: 3.5)
+              --emission-bounce-multiplier <float>                              Multiplier for emission strength on bounced light in Blender. Controls how strongly emissive surfaces light up surroundings. (default: 3)
+              --tone-mapper <name>                                              Blender tone mapper: AgX, Filmic, or Standard. Affects how colors appear in rendered images. (default: AgX)
+              -o, --output <dir>                                                Output directory (default: current directory)
+              -h, --help                                                        Show usage information
             """);
     }
 }

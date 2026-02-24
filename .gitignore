@@ -318,7 +318,7 @@ __pycache__/
 *.pyc
 
 # Maze generated output
-Vox2Pictoria/examples/maze/generated/
+examples/maze/generated/
 
 # Cake - Uncomment if you are using it
 # tools/**

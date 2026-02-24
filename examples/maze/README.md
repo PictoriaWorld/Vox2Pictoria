@@ -2,12 +2,14 @@
 
 Generates MagicaVoxel `.vox` files for a four-zone library maze, then renders them through the Vox2Pictoria pipeline.
 
+All commands below must be run from the `examples/` directory.
+
 ## Scripts
 
 | Script | Purpose |
 |---|---|
 | `generate_part_voxs.py` | Generates individual part `.vox` files (shelves, planters, lamps, tiles, etc.) for preview in MagicaVoxel. Output: `generated/parts/` |
-| `generate_zone_voxs.py` | Reads `MAZE_LARGE.png`, assembles parts into four zone `.vox` files. Output: `generated/zones/` |
+| `generate_zone_voxs.py` | Reads `misc/maze_layout.png`, assembles parts into four zone `.vox` files. Output: `generated/zones/` |
 
 ## Generate zones
 
@@ -16,10 +18,6 @@ python maze/generate_zone_voxs.py
 ```
 
 ## Render
-
-All commands run from the repo root (`Vox2Pictoria/`).
-
-> **PowerShell users:** Replace `\` with `` ` `` (backtick) for line continuation, or paste the single-line version.
 
 ### Scene test (fast preview)
 
