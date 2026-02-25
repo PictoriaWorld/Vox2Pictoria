@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.1] - 25-02-2026
+### Added
+- Validation that MagicaVoxel top level model/group (these correspond to Pictoria structures) bounding boxes do not intersect.
+- Improved error messages for palette mismatches and oversized structures during `.vox` combine.
+
+### Changes
+- `.vox` combine now correctly flattens input scene graphs so structures are recognized individually.
+- Generated `.vox` files now write MATL chunks for all 256 palette IDs, matching MagicaVoxel's save convention. This fixes MATL mismatch errors when combining a MagicaVoxel-resaved file with an untouched one.
+
+### Fixes
+- Fixed release notes ignoring text in backticks.
+- Minor cleanup of the maze example.
+
 ## [1.1.0] - 24-02-2026
 ### Added
 - Support for emissive, glass, and metal materials.
