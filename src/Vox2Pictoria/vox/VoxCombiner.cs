@@ -69,6 +69,28 @@ public static class VoxCombiner
             nextNodeId += parsedInputs[i].SceneGraphChunks.Count;
         }
 
+        // Extract the node IDs of the root group of each input
+        //
+        // Why? VoxCombiner produces a .vox that the rest of Vox2Pictoria processes. The rest of Vox2Pictoria converts top level models/groups to Pictoria structures.
+        // If we just put the root group of each input under the new root nGRP(1) of the combined .vox, then Vox2Pictoria tries to convert the root group of each input into a Pictoria structure!
+        // That isn't what we want - we need to extract the child nodes of each input's root group, and put those child nodes under the new root nGRP(1) of the combined .vox.
+        //
+        // There is a potential complication - if an input's root group has transforms, they need to be applied to its child nodes. However, MagicaVoxel does not seem to allow transforms on the root nTRN(0) (nGRP(1)'s parent 
+        // transform node), so we just check for them and throw if we find them (ValidateRootIsIdentity).
+        var combinedRootGroupChildNodeIDs = new HashSet<int>();
+        for (int i = 0; i < parsedInputs.Count; i++)
+        {
+            ParsedVox parsedInput = parsedInputs[i];
+            (string Path, int CenterX, int CenterY) combineInput = combineInputs[i];
+
+            // Validate that input root nTRN(0) has no transforms
+            ValidateRootIsIdentity(parsedInput, combineInput.Path);
+
+            // Extract child node IDs of root nGRP(1), applying the node ID offset for the combined file
+            int idOffset = inputStartNodeIDs[i];
+            foreach (int childId in GetSceneGroupChildNodeIDs(parsedInput, combineInput.Path)) combinedRootGroupChildNodeIDs.Add(childId + idOffset);
+        }
+
         // Merge MATL chunks from all inputs, deduplicating by palette ID
         List<Memory<byte>> mergedMatlChunks = MergeMatlChunks(parsedInputs, combineInputs);
 
@@ -86,6 +108,7 @@ public static class VoxCombiner
             Inputs = parsedInputs,
             InputModelChunkStartIndices = inputModelChunkStartIndices,
             InputStartNodeIDs = inputStartNodeIDs,
+            CombinedRootGroupChildNodeIDs = combinedRootGroupChildNodeIDs,
             InputCenterTranslations = inputCenterTranslations,
             RgbaChunk = parsedInputs[0].RgbaChunk, // Already validated that all inputs have the same palette
             MergedMatlChunks = mergedMatlChunks,
@@ -130,6 +153,69 @@ public static class VoxCombiner
         }
     }
 
+    private static HashSet<int> GetSceneGroupChildNodeIDs(ParsedVox parsedVox, string inputPath)
+    {
+        foreach (RawVoxChunk chunk in parsedVox.SceneGraphChunks)
+        {
+            // Not nGRP node
+            if (chunk.Id != "nGRP") continue;
+
+            // Not root nGRP(1)
+            ReadOnlySpan<byte> content = chunk.ChunkContentBytes.Span;
+            int bytePosition = 0;
+            int nodeId = VoxBytesReader.ReadInt32(content, ref bytePosition);
+            if (nodeId != 1) continue;
+
+            // Skip attributes
+            VoxBytesReader.SkipDictionary(content, ref bytePosition);
+
+            // Read child IDs
+            int numChildren = VoxBytesReader.ReadInt32(content, ref bytePosition);
+            var childIds = new HashSet<int>(numChildren);
+            for (int i = 0; i < numChildren; i++) childIds.Add(VoxBytesReader.ReadInt32(content, ref bytePosition));
+
+            return childIds;
+        }
+
+        throw new InvalidOperationException($"Scene group (nGRP nodeId=1) not found in '{inputPath}'.");
+    }
+
+    private static void ValidateRootIsIdentity(ParsedVox parsedVox, string inputPath)
+    {
+        foreach (RawVoxChunk chunk in parsedVox.SceneGraphChunks)
+        {
+            // Not nTRN node
+            if (chunk.Id != "nTRN") continue;
+
+            // Not root nTRN(0)
+            ReadOnlySpan<byte> content = chunk.ChunkContentBytes.Span;
+            int bytePosition = 0;
+            int nodeId = VoxBytesReader.ReadInt32(content, ref bytePosition);
+            if (nodeId != 0) continue;
+
+            // Skip node_attributes, child_id, reserved, layer, num_frames
+            VoxBytesReader.SkipDictionary(content, ref bytePosition);
+            bytePosition += 16; // child_id + reserved + layer + num_frames
+
+            // Read frame attributes and check for _r or _t
+            int numPairs = VoxBytesReader.ReadInt32(content, ref bytePosition);
+            for (int i = 0; i < numPairs; i++)
+            {
+                // Read key
+                string key = VoxBytesReader.ReadString(content, ref bytePosition);
+
+                // Check for transformations
+                if (key == "_r") throw new InvalidOperationException($"Input '{inputPath}' has a rotation on its root nTRN(0). Combined inputs must not have root rotations.");
+                if (key == "_t") throw new InvalidOperationException($"Input '{inputPath}' has a translation on its root nTRN(0). Combined inputs must not have root translations.");
+
+                // Skip value
+                VoxBytesReader.SkipString(content, ref bytePosition);
+            }
+            return;
+        }
+        throw new InvalidOperationException($"Root transform (nTRN nodeId=0) not found in '{inputPath}'.");
+    }
+
     private static void ValidatePalettes(List<ParsedVox> inputs, List<(string Path, int CenterX, int CenterY)> combineInputs)
     {
         if (inputs.Count < 2) return;
@@ -145,8 +231,16 @@ public static class VoxCombiner
 
             if (reference.Length != other.Length) throw new InvalidOperationException($"Palette size mismatch between '{combineInputs[0].Path}' and '{combineInputs[i].Path}'.");
 
-            if (!reference[12..].SequenceEqual(other[12..]))
-                throw new InvalidOperationException($"Palette mismatch between '{combineInputs[0].Path}' and '{combineInputs[i].Path}'.");
+            // Compare RGBA content (after 12-byte chunk header). Each palette entry is 4 bytes (R, G, B, A).
+            ReadOnlySpan<byte> refContent = reference[12..];
+            ReadOnlySpan<byte> otherContent = other[12..];
+            for (int j = 0; j < refContent.Length; j++)
+            {
+                if (refContent[j] == otherContent[j]) continue;
+
+                int paletteIndex = j / 4 + 1; // 1-based palette index
+                throw new InvalidOperationException($"Palette mismatch between '{combineInputs[0].Path}' and '{combineInputs[i].Path}' at palette index {paletteIndex} (byte offset {j}).");
+            }
         }
     }
 }

@@ -23,6 +23,11 @@ public struct Cuboid(int minX, int maxX, int minY, int maxY, int minZ, int maxZ)
         MaxZ = newMaxZ;
     }
 
+    public readonly bool Intersects(Cuboid other)
+    {
+        return MinX < other.MaxX && MaxX > other.MinX && MinY < other.MaxY && MaxY > other.MinY && MinZ < other.MaxZ && MaxZ > other.MinZ;
+    }
+
     public readonly Vector3Int GetMins()
     {
         return new Vector3Int(MinX, MinY, MinZ);

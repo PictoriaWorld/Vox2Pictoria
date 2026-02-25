@@ -10,7 +10,7 @@ public static class VoxParser
     //
     // .vox format summary:
     //
-    //   File Header: 'VOX ' (4 bytes) + version int32 (150)
+    //   File Header: 'VOX ' (4 bytes) + version int32 (200)
     //   Chunk []: 
     //     Chunk Header: Each chunk has a 4-char ID, int32 content byte size (N), int32 children byte size (M)
     //     Chunk Contents: N bytes content, M bytes children
@@ -41,7 +41,7 @@ public static class VoxParser
         // Validate file header: "VOX " + version
         if (bytes.Length < 8 || Encoding.ASCII.GetString(bytes, 0, 4) != "VOX ") throw new InvalidOperationException($"Invalid .vox header in '{path}'.");
         int version = BitConverter.ToInt32(bytes, 4);
-        if (version < 150) throw new InvalidOperationException($"Unsupported .vox version {version} in '{path}'. Minimum supported version is 0.99.7.2."); // 0.99.7.2 = 150
+        if (version < 200) throw new InvalidOperationException($"Unsupported .vox version {version} in '{path}'. Minimum supported version is 0.99.7.2."); // 0.99.7.2 = 200
 
         // Container for the entire parsed .vox file's data
         var parsedVox = new ParsedVox(bytes, version);

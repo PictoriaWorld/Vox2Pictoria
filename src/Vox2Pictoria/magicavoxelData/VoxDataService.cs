@@ -37,6 +37,9 @@ public class VoxDataService
         // Create StructureInfos
         Dictionary<string, StructureInfo> structureNameStructureInfoMap = CreateStructureInfos(transformNodeChunkIDShapeInfoMap);
 
+        // Validate no intersecting bounding boxes
+        ValidateNoIntersectingBoundingBoxes(structureNameStructureInfoMap);
+
         // Set structure image dimensions
         SetStructureImageDimensions(structureNameStructureInfoMap);
 
@@ -248,6 +251,47 @@ public class VoxDataService
         }
     }
 
+    // Sweep-and-prune on the X axis: O(N log N) sort + O(N + K) sweep where K is the number of X-overlapping pairs.
+    private static void ValidateNoIntersectingBoundingBoxes(Dictionary<string, StructureInfo> structureNameStructureInfoMap)
+    {
+        // Sort structure name - structure info pairs by minX
+        var structureNameStructureInfoArray = structureNameStructureInfoMap.ToArray();
+        Array.Sort(structureNameStructureInfoArray, CompareStructureInfoByMinX);
+
+        // Iterate over structure name - structure info pairs
+        //
+        // Compare each structure info to structure infos that overlap along the X axis
+        for (int i = 0; i < structureNameStructureInfoArray.Length; i++)
+        {
+            Cuboid structure1Location = structureNameStructureInfoArray[i].Value.ShapeInfo.MagicaVoxelLocation;
+
+            for (int j = i + 1; j < structureNameStructureInfoArray.Length; j++)
+            {
+                Cuboid structure2Location = structureNameStructureInfoArray[j].Value.ShapeInfo.MagicaVoxelLocation;
+
+                // No more X overlap with structure1
+                if (structure2Location.MinX >= structure1Location.MaxX) break;
+
+                // No intersection
+                if (!structure1Location.Intersects(structure2Location)) continue;
+
+                // Intersection found
+                string structure1Name = structureNameStructureInfoArray[i].Key;
+                string structure2Name = structureNameStructureInfoArray[j].Key;
+                throw new InvalidOperationException(
+                    $"Structure bounding boxes must not intersect, but '{structure1Name}' and '{structure2Name}' overlap.\n" +
+                    $"  {structure1Name}: MagicaVoxel bounds X [{structure1Location.MinX}, {structure1Location.MaxX}), Y [{structure1Location.MinY}, {structure1Location.MaxY}), Z [{structure1Location.MinZ}, {structure1Location.MaxZ})\n" +
+                    $"  {structure2Name}: MagicaVoxel bounds X [{structure2Location.MinX}, {structure2Location.MaxX}), Y [{structure2Location.MinY}, {structure2Location.MaxY}), Z [{structure2Location.MinZ}, {structure2Location.MaxZ})\n" +
+                    "Ensure top-level models/groups in MagicaVoxel do not overlap.");
+            }
+        }
+    }
+
+    private static int CompareStructureInfoByMinX(KeyValuePair<string, StructureInfo> structureNameStructureInfo1, KeyValuePair<string, StructureInfo> structureNameStructureInfo2)
+    {
+        return structureNameStructureInfo1.Value.ShapeInfo.MagicaVoxelLocation.MinX.CompareTo(structureNameStructureInfo2.Value.ShapeInfo.MagicaVoxelLocation.MinX);
+    }
+
     private static Dictionary<string, StructureInfo> CreateStructureInfos(Dictionary<int, ShapeInfo> transformNodeChunkIDShapeInfoMap)
     {
         var structureNameStructureInfoMap = new Dictionary<string, StructureInfo>();
@@ -258,7 +302,9 @@ public class VoxDataService
                 shapeInfo.PictoriaLocation.YLength > 512 ||
                 shapeInfo.PictoriaLocation.ZLength > 512)
             {
-                throw new InvalidOperationException("PictoriaDimension exceeds 512");
+                Cuboid location = shapeInfo.PictoriaLocation;
+                throw new InvalidOperationException($"Structure '{shapeInfo.ParentTransformNodeName}' (index {structureIndex}) exceeds 512 in at least one dimension.\n" +
+                    $"  PictoriaLocation: X [{location.MinX}, {location.MaxX}) = {location.XLength}, Y [{location.MinY}, {location.MaxY}) = {location.YLength}, Z [{location.MinZ}, {location.MaxZ}) = {location.ZLength}");
             }
 
             (string structureName, VolumeType volumeType) = GetStructureNameAndVolumeType(shapeInfo, structureIndex++);

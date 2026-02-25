@@ -29,9 +29,9 @@ public static class VoxWriter
 
         // Write combined scene graph
         //
-        // New root: nTRN(0) → nGRP(1) → [each input's remapped nTRN(0)]
+        // New root: nTRN(0) → nGRP(1) → children of each input's root nGRP
         WriteNTrnChunk(writer, 0, 1, "_name", "root", null);
-        WriteNGrpChunk(writer, 1, combinedVox.InputStartNodeIDs);
+        WriteNGrpChunk(writer, 1, combinedVox.CombinedRootGroupChildNodeIDs);
 
         for (int i = 0; i < combinedVox.Inputs.Count; i++)
         {
@@ -44,10 +44,21 @@ public static class VoxWriter
             foreach (RawVoxChunk chunk in input.SceneGraphChunks)
             {
                 ReadOnlySpan<byte> content = chunk.ChunkContentBytes.Span;
+                int nodeId = BitConverter.ToInt32(content);
+                int newNodeId = nodeId + inputStartNodeID;
 
-                if (chunk.Id == "nTRN") WriteRemappedNTrn(writer, content, inputStartNodeID, inputCenterX, inputCenterY);
-                else if (chunk.Id == "nGRP") WriteRemappedNGrp(writer, content, inputStartNodeID);
-                else if (chunk.Id == "nSHP") WriteRemappedNShp(writer, content, inputStartNodeID, inputModelChunkStartIndex);
+                if (chunk.Id == "nTRN")
+                {
+                    if (nodeId == 0) continue; // Skip input root nTRN
+                    bool applyCenterOffset = combinedVox.CombinedRootGroupChildNodeIDs.Contains(newNodeId);
+                    WriteRemappedNTrn(writer, content, newNodeId, inputStartNodeID, applyCenterOffset, inputCenterX, inputCenterY);
+                }
+                else if (chunk.Id == "nGRP")
+                {
+                    if (nodeId == 1) continue; // Skip input scene nGRP
+                    WriteRemappedNGrp(writer, content, newNodeId, inputStartNodeID);
+                }
+                else if (chunk.Id == "nSHP") WriteRemappedNShp(writer, content, newNodeId, inputStartNodeID, inputModelChunkStartIndex);
             }
         }
 
@@ -67,10 +78,10 @@ public static class VoxWriter
         Console.WriteLine($"Combined .vox written to: {outputPath}. Number of inputs: {combinedVox.Inputs.Count}");
     }
 
-    private static void WriteRemappedNTrn(BinaryWriter writer, ReadOnlySpan<byte> content, int idOffset, int centerX, int centerY)
+    private static void WriteRemappedNTrn(BinaryWriter writer, ReadOnlySpan<byte> content, int newNodeId, int idOffset, bool applyCenterOffset, int centerX, int centerY)
     {
         // nTRN layout:
-        //   int32 node_id
+        //   int32 node_id          (already read by caller)
         //   DICT  node_attributes
         //   int32 child_node_id
         //   int32 reserved_id
@@ -78,32 +89,27 @@ public static class VoxWriter
         //   int32 num_frames
         //   DICT  frame_attributes (contains _t and optionally _r)
 
-        int bytePosition = 0;
-
-        // Update node ID
-        int nodeId = ReadInt32(content, ref bytePosition);
-        int newNodeId = nodeId + idOffset;
+        int bytePosition = 4; // Skip node_id (already read)
 
         // Record node attributes start and end for raw copying
         int nodeAttributesStart = bytePosition;
-        SkipDictionary(content, ref bytePosition);
+        VoxBytesReader.SkipDictionary(content, ref bytePosition);
         int nodeAttributesEnd = bytePosition;
 
         // Update child node ID
-        int newChildId = ReadInt32(content, ref bytePosition) + idOffset;
+        int newChildId = VoxBytesReader.ReadInt32(content, ref bytePosition) + idOffset;
 
         // Record reserved/layer/frames start for raw copying
         int reservedLayerFramesStart = bytePosition;
         bytePosition += 12; // reserved_id + layer_id + num_frames
 
-        // Update translation for input root nTRN
+        // Update translation for top-level structure nTRNs
         int frameAttributesStart = bytePosition;
         int contentsByteSize;
         Dictionary<string, string>? frameAttributes = null;
-        if (nodeId == 0)
+        if (applyCenterOffset)
         {
-            // Root nTRN: apply center offset to frame attributes
-            frameAttributes = ReadDictionary(content, ref bytePosition);
+            frameAttributes = VoxBytesReader.ReadDictionary(content, ref bytePosition);
 
             if (frameAttributes.TryGetValue("_t", out string? tValue))
             {
@@ -124,7 +130,7 @@ public static class VoxWriter
         writer.Write(newNodeId);
         writer.Write(content[nodeAttributesStart..nodeAttributesEnd]);
         writer.Write(newChildId);
-        if (nodeId == 0)
+        if (applyCenterOffset)
         {
             writer.Write(content[reservedLayerFramesStart..frameAttributesStart]);
             WriteDictionary(writer, frameAttributes!);
@@ -132,10 +138,10 @@ public static class VoxWriter
         else writer.Write(content[reservedLayerFramesStart..]);
     }
 
-    private static void WriteRemappedNGrp(BinaryWriter writer, ReadOnlySpan<byte> content, int idOffset)
+    private static void WriteRemappedNGrp(BinaryWriter writer, ReadOnlySpan<byte> content, int newNodeId, int idOffset)
     {
         // nGRP layout:
-        //   int32 node_id
+        //   int32 node_id          (already read by caller)
         //   DICT  node_attributes
         //   int32 num_children
         //   int32[] child_ids
@@ -143,24 +149,24 @@ public static class VoxWriter
         // Content size unchanged (only int32 values remapped)
         WriteChunkHeader(writer, "nGRP", content.Length);
 
-        int bytePosition = 0;
+        int bytePosition = 4; // Skip node_id (already read)
 
-        // Update node ID
-        writer.Write(ReadInt32(content, ref bytePosition) + idOffset);
+        // Write remapped node ID
+        writer.Write(newNodeId);
 
         // Copy node attributes dict
         CopyDictionary(writer, content, ref bytePosition);
 
         // Update child IDs
-        int numChildren = ReadInt32(content, ref bytePosition);
+        int numChildren = VoxBytesReader.ReadInt32(content, ref bytePosition);
         writer.Write(numChildren);
-        for (int i = 0; i < numChildren; i++) writer.Write(ReadInt32(content, ref bytePosition) + idOffset);
+        for (int i = 0; i < numChildren; i++) writer.Write(VoxBytesReader.ReadInt32(content, ref bytePosition) + idOffset);
     }
 
-    private static void WriteRemappedNShp(BinaryWriter writer, ReadOnlySpan<byte> content, int idOffset, int modelOffset)
+    private static void WriteRemappedNShp(BinaryWriter writer, ReadOnlySpan<byte> content, int newNodeId, int idOffset, int modelOffset)
     {
         // nSHP layout:
-        //   int32 node_id
+        //   int32 node_id          (already read by caller)
         //   DICT  node_attributes
         //   int32 num_models
         //   For each model:
@@ -170,21 +176,21 @@ public static class VoxWriter
         // Content size unchanged (only int32 values remapped)
         WriteChunkHeader(writer, "nSHP", content.Length);
 
-        int bytePosition = 0;
+        int bytePosition = 4; // Skip node_id (already read)
 
-        // Update node ID
-        writer.Write(ReadInt32(content, ref bytePosition) + idOffset);
+        // Write remapped node ID
+        writer.Write(newNodeId);
 
         // Copy node attributes dict
         CopyDictionary(writer, content, ref bytePosition);
 
         // Models
-        int numModels = ReadInt32(content, ref bytePosition);
+        int numModels = VoxBytesReader.ReadInt32(content, ref bytePosition);
         writer.Write(numModels);
         for (int i = 0; i < numModels; i++)
         {
             // Update model ID
-            writer.Write(ReadInt32(content, ref bytePosition) + modelOffset);
+            writer.Write(VoxBytesReader.ReadInt32(content, ref bytePosition) + modelOffset);
 
             // Copy model attributes dict
             CopyDictionary(writer, content, ref bytePosition);
@@ -206,7 +212,7 @@ public static class VoxWriter
         WriteDictionary(writer, frameAttributes);
     }
 
-    private static void WriteNGrpChunk(BinaryWriter writer, int nodeId, List<int> childIds)
+    private static void WriteNGrpChunk(BinaryWriter writer, int nodeId, HashSet<int> childIds)
     {
         WriteChunkHeader(writer, "nGRP", 12 /* nodeId + empty dict (4 bytes for count=0) + numChildren */ + 4 * childIds.Count);
         writer.Write(nodeId);
@@ -223,52 +229,11 @@ public static class VoxWriter
         writer.Write(0); // children size
     }
 
-    private static int ReadInt32(ReadOnlySpan<byte> bytes, ref int bytePosition)
-    {
-        int value = BitConverter.ToInt32(bytes[bytePosition..]);
-        bytePosition += 4;
-        return value;
-    }
-
     private static void CopyDictionary(BinaryWriter writer, ReadOnlySpan<byte> bytes, ref int bytePosition)
     {
         int start = bytePosition;
-        SkipDictionary(bytes, ref bytePosition);
+        VoxBytesReader.SkipDictionary(bytes, ref bytePosition);
         writer.Write(bytes[start..bytePosition]);
-    }
-
-    private static void SkipDictionary(ReadOnlySpan<byte> bytes, ref int bytePosition)
-    {
-        int numPairs = BitConverter.ToInt32(bytes[bytePosition..]);
-        bytePosition += 4;
-        for (int i = 0; i < numPairs; i++)
-        {
-            int keyLength = BitConverter.ToInt32(bytes[bytePosition..]);
-            bytePosition += 4 + keyLength;
-            int valueLength = BitConverter.ToInt32(bytes[bytePosition..]);
-            bytePosition += 4 + valueLength;
-        }
-    }
-
-    private static Dictionary<string, string> ReadDictionary(ReadOnlySpan<byte> bytes, ref int bytePosition)
-    {
-        var dictionary = new Dictionary<string, string>();
-        int numPairs = BitConverter.ToInt32(bytes[bytePosition..]);
-        bytePosition += 4;
-        for (int i = 0; i < numPairs; i++)
-        {
-            int keyLength = BitConverter.ToInt32(bytes[bytePosition..]);
-            bytePosition += 4;
-            string key = Encoding.UTF8.GetString(bytes.Slice(bytePosition, keyLength));
-            bytePosition += keyLength;
-            int valueLength = BitConverter.ToInt32(bytes[bytePosition..]);
-            bytePosition += 4;
-            string value = Encoding.UTF8.GetString(bytes.Slice(bytePosition, valueLength));
-            bytePosition += valueLength;
-
-            dictionary[key] = value;
-        }
-        return dictionary;
     }
 
     private static int GetDictionaryByteSize(Dictionary<string, string>? pairs)

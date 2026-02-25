@@ -12,6 +12,7 @@ public class CombinedVox
     public required List<ParsedVox> Inputs { get; init; }
     public required List<int> InputModelChunkStartIndices { get; init; }
     public required List<int> InputStartNodeIDs { get; init; }
+    public required HashSet<int> CombinedRootGroupChildNodeIDs { get; init; }
     public required List<(int CenterX, int CenterY)> InputCenterTranslations { get; init; }
 
     // Merged data
