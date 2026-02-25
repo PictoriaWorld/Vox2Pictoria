@@ -92,21 +92,22 @@ def write_vox_file(filepath: str, size: tuple[int, int, int],
     for i in range(1, 256):
         r, g, b, a = palette[i] if i < len(palette) else (0, 0, 0, 255)
         rgba_content += struct.pack("<BBBB", r, g, b, a)
-    rgba_content += struct.pack("<BBBB", 0, 0, 0, 255)
+    rgba_content += struct.pack("<BBBB", 0, 0, 0, 0)
     rgba_chunk = write_chunk(b"RGBA", rgba_content)
 
     scene_graph = _write_scene_graph()
 
-    # MATL chunks for special materials (emissive, glass, etc.)
+    # MATL chunks — one per palette ID (1-256), matching MagicaVoxel convention
+    _MATL_DIFFUSE_DEFAULT = {"_rough": "0.1", "_ior": "0.3", "_ri": "1.3", "_d": "0.05"}
     matl_chunks = b""
-    if materials:
-        for mat_id, props in materials.items():
-            matl_content = struct.pack("<I", mat_id) + _write_dict(props)
-            matl_chunks += write_chunk(b"MATL", matl_content)
+    for mat_id in range(1, 257):
+        props = materials.get(mat_id, _MATL_DIFFUSE_DEFAULT) if materials else _MATL_DIFFUSE_DEFAULT
+        matl_content = struct.pack("<I", mat_id) + _write_dict(props)
+        matl_chunks += write_chunk(b"MATL", matl_content)
 
     children = size_chunk + xyzi_chunk + scene_graph + rgba_chunk + matl_chunks
     main_chunk = write_chunk(b"MAIN", b"", children)
-    header = b"VOX " + struct.pack("<I", 150)
+    header = b"VOX " + struct.pack("<I", 200)
 
     os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
     with open(filepath, "wb") as f:
@@ -120,29 +121,29 @@ def write_vox_file(filepath: str, size: tuple[int, int, int],
 # ============================================================
 
 def make_palette() -> list[tuple[int, int, int, int]]:
-    pal = [(0, 0, 0, 0)] * 256
+    pal = [(0, 0, 0, 255)] * 256
 
-    # Wood tones (1-20) — darkened 35% for rich library wood (+10% red, except 7/14/17)
-    pal[1]  = (181, 147, 119, 255)
-    pal[2]  = (162, 130, 102, 255)
-    pal[3]  = (154, 120, 90, 255)
-    pal[4]  = (143, 106, 77, 255)
-    pal[5]  = (131, 95, 67, 255)
-    pal[6]  = (118, 84, 54, 255)
-    pal[7]  = (97, 70, 44, 255)
-    pal[8]  = (85, 57, 33, 255)
-    pal[9]  = (67, 46, 27, 255)
-    pal[10] = (53, 34, 20, 255)
-    pal[11] = (146, 110, 77, 255)
-    pal[12] = (137, 99, 67, 255)
-    pal[13] = (124, 86, 57, 255)
-    pal[14] = (102, 74, 47, 255)
-    pal[15] = (151, 117, 86, 255)
-    pal[16] = (128, 93, 64, 255)
-    pal[17] = (105, 79, 52, 255)
-    pal[18] = (92, 64, 40, 255)
-    pal[19] = (74, 50, 32, 255)
-    pal[20] = (59, 39, 24, 255)
+    # Wood tones (1-20) — darkened 40% for rich library wood (+15% red, except 7/14/17)
+    pal[1]  = (181, 140, 113, 255)
+    pal[2]  = (162, 124, 97, 255)
+    pal[3]  = (154, 114, 86, 255)
+    pal[4]  = (143, 101, 73, 255)
+    pal[5]  = (131, 90, 64, 255)
+    pal[6]  = (118, 80, 51, 255)
+    pal[7]  = (97, 67, 42, 255)
+    pal[8]  = (85, 54, 31, 255)
+    pal[9]  = (67, 44, 26, 255)
+    pal[10] = (53, 32, 19, 255)
+    pal[11] = (145, 105, 73, 255)
+    pal[12] = (137, 94, 64, 255)
+    pal[13] = (124, 82, 54, 255)
+    pal[14] = (102, 70, 45, 255)
+    pal[15] = (151, 111, 82, 255)
+    pal[16] = (127, 88, 61, 255)
+    pal[17] = (105, 75, 49, 255)
+    pal[18] = (92, 61, 38, 255)
+    pal[19] = (74, 48, 30, 255)
+    pal[20] = (59, 37, 23, 255)
 
     # Book spine colors (21-90)
     pal[21] = (180, 50, 50, 255);   pal[22] = (200, 65, 55, 255)
@@ -202,17 +203,17 @@ def make_palette() -> list[tuple[int, int, int, int]]:
         t = 0.45
         pal[i] = (int(r + (gray - r) * t), int(g + (gray - g) * t), int(b + (gray - b) * t), a)
 
-    # Stone / Tile (91-100) — rosy pink travertine, high contrast (+7% red)
-    pal[91] = (247, 195, 175, 255)  # lightest pink
-    pal[92] = (233, 178, 158, 255)  # light rosy
-    pal[93] = (216, 162, 142, 255)  # medium light
-    pal[94] = (198, 145, 125, 255)  # medium pink
-    pal[95] = (171, 120, 102, 255)  # medium dark
-    pal[96] = (241, 188, 168, 255)  # pale rosy
-    pal[97] = (209, 155, 135, 255)  # warm mid
-    pal[98] = (158, 110, 92, 255)   # warm dark
-    pal[99] = (130, 85, 70, 255)    # darkest (grout/veins)
-    pal[100] = (243, 192, 172, 255) # highlight pink
+    # Stone / Tile (91-100) — rosy pink travertine, high contrast (+12% red)
+    pal[91] = (255, 195, 175, 255)  # lightest pink
+    pal[92] = (245, 178, 158, 255)  # light rosy
+    pal[93] = (227, 162, 142, 255)  # medium light
+    pal[94] = (208, 145, 125, 255)  # medium pink
+    pal[95] = (180, 120, 102, 255)  # medium dark
+    pal[96] = (253, 188, 168, 255)  # pale rosy
+    pal[97] = (219, 155, 135, 255)  # warm mid
+    pal[98] = (166, 110, 92, 255)   # warm dark
+    pal[99] = (137, 85, 70, 255)    # darkest (grout/veins)
+    pal[100] = (255, 192, 172, 255) # highlight pink
 
     # Plant greens (101-115) — desaturated for natural look
     pal[101] = (106, 138, 93, 255);  pal[102] = (89, 120, 79, 255)
@@ -1964,10 +1965,10 @@ def generate_entrance_plaque(palette, output_dir, rng, filename="entrance_plaque
 
     # --- 7. Materials ---
     # Emissive for lamps
-    m.set_material(117, {"_type": "_emit", "_emit": "0.8", "_flux": "3", "_weight": "1.0"})
+    m.set_material(117, {"_type": "_emit", "_emit": "0.8", "_flux": "3"})
     # Metal for brass palette indices
     for idx in [METAL_DARK, 127, METAL_MEDIUM, METAL_LIGHT, 130, 131, 132]:
-        m.set_material(idx, {"_type": "_metal", "_metal": "0.8", "_rough": "0.3", "_weight": "1.0"})
+        m.set_material(idx, {"_type": "_metal", "_metal": "0.8", "_rough": "0.3"})
 
     # --- 8. Normalize z to tight bounding box ---
     z_base = 0
@@ -2524,7 +2525,7 @@ def generate_lamp(palette, output_dir):
     """Standalone Victorian lamp post."""
     m = VoxelModel()
     build_lamp(m, base_z=0)
-    m.set_material(117, {"_type": "_emit", "_emit": "0.8", "_flux": "3", "_weight": "1.0"})
+    m.set_material(117, {"_type": "_emit", "_emit": "0.8", "_flux": "3"})
     m.save(os.path.join(output_dir, "lamp.vox"), palette)
 
 

@@ -104,7 +104,7 @@ Usage: Vox2Pictoria [vox-path] [options]
 | Argument / Option | Default | Description |
 |-------------------|---------|-------------|
 | `vox-path` | First `.vox` in current directory | Path to the `.vox` file. |
-| `--combine "vox-path-1 cx cy" "vox-path-2 cx cy" ...` | N/A | Combine multiple `.vox` files into one scene. Each argument is a quoted string with the `.vox` path and its MagicaVoxel X/Y center position. All `.vox` files must share the same palette, also, after combining they must be a rectangle. This option exists to work around MagicaVoxel's project dimensions limit. When specified, this option takes precedence over `vox-path`. |
+| `--combine "vox-path-1 cx cy" "vox-path-2 cx cy" ...` | N/A | Combine multiple `.vox` files into one scene. Each argument is a quoted string with the `.vox` path and its MagicaVoxel X/Y center position. All `.vox` files must share the same palette. This option exists to work around MagicaVoxel's project dimensions limit. When specified, this option takes precedence over `vox-path`. |
 | `--min-tile-x <integer>` | `0` | Minimum tile-X coordinate of the property in Pictoria. |
 | `--min-tile-z <integer>` | `0` | Minimum tile-Z coordinate of the property in Pictoria. |
 | `--scene-test-run` | off | When specified, only a single 2D image of the full scene is rendered. Useful for previewing. |

@@ -604,7 +604,7 @@ def build_planter_model(nook, palette, seed_base):
     for (px, py, pz), c in planter_m._v.items():
         mx = ax * px + bx * py + cx
         my = ay * px + by * py + cy
-        mz = pz + 1  # sit on floor
+        mz = pz
         xyzi_bytes.extend((mx, my, mz, c))
         if mx > maxes[0]: maxes = (mx, maxes[1], maxes[2])
         if my > maxes[1]: maxes = (maxes[0], my, maxes[2])
@@ -692,8 +692,8 @@ def build_staircase_balustrade_models(palette, seed_base, ascend_dir):
     # Left: inside_x=4 (x=4 faces the staircase at ly=16)
     # Right: inside_x=0 (x=0 faces the staircase at ly=79)
     sides = [
-        (4, 10),   # (inside_x, ly_offset) â€” left balustrade
-        (0, 79),   # right balustrade
+        (4, 11),   # (inside_x, ly_offset) â€” left balustrade
+        (0, 80),   # right balustrade
     ]
 
     results = []
@@ -879,8 +879,8 @@ def build_bridge_balustrade_models(rng, bridge_len, stair_at_high_lx,
     SUPPORT_H = _STR_Z_BOT  # supports fill model z 0 .. _STR_Z_BOT-1
 
     sides = [
-        (4, 10, 0),   # (inside_ly, ly_off, col_offset) â€” left balustrade
-        (0, 79, 2),   # right balustrade
+        (4, 11, 0),   # (inside_ly, ly_off, col_offset) â€” left balustrade
+        (0, 80, 2),   # right balustrade
     ]
 
     all_sides = []
@@ -1348,24 +1348,25 @@ def write_structured_vox(filepath, all_model_data, structures, total_x, total_y,
     for i in range(1, 256):
         r, g, b, a = palette[i] if i < len(palette) else (0, 0, 0, 255)
         rgba_content += struct.pack("<BBBB", r, g, b, a)
-    rgba_content += struct.pack("<BBBB", 0, 0, 0, 255)
+    rgba_content += struct.pack("<BBBB", 0, 0, 0, 0)
     rgba_chunk = write_chunk(b"RGBA", rgba_content)
 
-    # MATL chunks for special materials
+    # MATL chunks — one per palette ID (1-256), matching MagicaVoxel convention
+    _MATL_DIFFUSE_DEFAULT = {"_rough": "0.1", "_ior": "0.3", "_ri": "1.3", "_d": "0.05"}
+    special_materials = {
+        117: {"_type": "_emit", "_emit": "0.8", "_flux": "3"},
+        METAL_LIGHT: {"_type": "_metal", "_metal": "0.8", "_rough": "0.3"},
+    }
     matl_chunks = b""
-    # Emissive lamp material
-    matl_content = struct.pack("<I", 117) + _write_dict(
-        {"_type": "_emit", "_emit": "0.8", "_flux": "3", "_weight": "1.0"})
-    matl_chunks += write_chunk(b"MATL", matl_content)
-    # Metal material for brightest brass only
-    matl_content = struct.pack("<I", METAL_LIGHT) + _write_dict(
-        {"_type": "_metal", "_metal": "0.8", "_rough": "0.3", "_weight": "1.0"})
-    matl_chunks += write_chunk(b"MATL", matl_content)
+    for mat_id in range(1, 257):
+        props = special_materials.get(mat_id, _MATL_DIFFUSE_DEFAULT)
+        matl_content = struct.pack("<I", mat_id) + _write_dict(props)
+        matl_chunks += write_chunk(b"MATL", matl_content)
 
     # Assemble
     children = all_model_data + scene_graph + rgba_chunk + matl_chunks
     main_chunk = write_chunk(b"MAIN", b"", children)
-    header = b"VOX " + struct.pack("<I", 150)
+    header = b"VOX " + struct.pack("<I", 200)
 
     os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
     with open(filepath, "wb") as f:
@@ -1788,6 +1789,7 @@ def generate_zone(zone_name, zone_info, shelf_map, palette, output_dir,
         e_mc_end = mc_end + b_left
         wx, wy = model_world_origin(e_mr_end, e_mc_end, exp_rows, exp_cols)
         t = model_translation(wx, wy, sx, sy, sz, shift_x, shift_y)
+        t = (t[0], t[1], t[2] + 1)  # sit on floor (above z=0 floor tile)
         structures.append({'models': [(model_idx, t, (sx, sy, sz))]})
 
     print(f"    {len(nooks)} nooks, {nook_model_count} nook models", flush=True)
