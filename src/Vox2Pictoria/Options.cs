@@ -26,6 +26,7 @@ public class Options
     public string TempDirectory { get; }
     public string RendersDirectory { get; }
     public string ImagesDirectory { get; }
+    public string StructureDefinitionsDirectory { get; }
     public string BlenderOptionsPath { get; }
 
     public Options(string[] args)
@@ -153,6 +154,7 @@ public class Options
         BlenderOptionsPath = Path.Combine(ObjOutputDirectory, "blender_options.json");
         BinDirectory = Path.Combine(resolvedOutputDirectory, "bin");
         ImagesDirectory = Path.Combine(BinDirectory, "images");
+        StructureDefinitionsDirectory = Path.Combine(BinDirectory, "StructureDefinitions");
     }
 
     private static void PrintHelp()

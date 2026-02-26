@@ -116,6 +116,9 @@ internal class Program
             {
                 // Crop and scale renders
                 await PostProcessingService.CropAndScaleRenders(structureNameStructureInfoMap, options);
+
+                // Generate .pstr files
+                await DefinitionService.GeneratePstrFiles(structureNameStructureInfoMap, options);
             }
 
             // Success
