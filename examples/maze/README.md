@@ -1,25 +1,40 @@
-# Library Maze
+# Maze
 
-Generates MagicaVoxel `.vox` files for a four-zone library maze, then renders them through the Vox2Pictoria pipeline.
+## Overview
 
-All commands below must be run from the `examples/` directory.
+MagicaVoxel maze scene designed for testing Vox2Pictoria's `.vox` combining feature.
 
-## Scripts
+Why combine multiple .vox files? MagicaVoxel limits scenes to 2000x2000x1000. Scenes may exceed that - like this maze scene. In this case, we split the maze into four parts. We've arbitrarily named each part a "zone".
 
-| Script | Purpose |
-|---|---|
-| `generate_part_voxs.py` | Generates individual part `.vox` files (shelves, planters, lamps, tiles, etc.) for preview in MagicaVoxel. Output: `generated/parts/` |
-| `generate_zone_voxs.py` | Reads `misc/maze_layout.png`, assembles parts into four zone `.vox` files. Output: `generated/zones/` |
+*Note: this example has only been tested on Windows, if you encounter issues on macOS/Linux, feel free to open an issue or submit a PR.*
 
-## Generate zones
+## Prerequisites
+- **Python 3**. Required to run the zone generator script. Download it from [python.org](https://www.python.org/downloads/).
+- **Pillow** Python library. Required to run the zone generator script. Install it with `pip install Pillow`.
+- **Cinzel** font. Required for text in the scene. Download it from [Google Fonts](https://fonts.google.com/specimen/Cinzel), unzip, and install `Cinzel-VariableFont_wght.ttf`.
+
+## Quick start
+
+All commands must be run from the `examples/` directory.
+
+### 1. Generate zones
 
 ```
 python maze/generate_zone_voxs.py
 ```
 
-## Render
+This generates four `.vox` files in `maze/generated/zones/`: `zone_blue.vox`, `zone_green.vox`, `zone_pink.vox`, and `zone_yellow.vox`.
 
-### Scene test (fast preview)
+You can open these files in MagicaVoxel to preview them.
+
+### 2. Test Render
+
+Render the combined scene as a single, lower quality image to preview it:
+
+PowerShell:
+```pwsh
+Vox2Pictoria --combine "maze/generated/zones/zone_pink.vox 560 592" "maze/generated/zones/zone_green.vox 560 -528" "maze/generated/zones/zone_blue.vox -560 592" "maze/generated/zones/zone_yellow.vox -560 -528" --scene-test-run --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58
+```
 
 Bash:
 ```bash
@@ -33,16 +48,19 @@ Vox2Pictoria \
   --sun-energy 1 \
   --sun-color 1 0.82 0.58 \
   --ambient-light-strength 0.4 \
-  --ambient-light-color 1 0.82 0.58 \
-  -o maze/generated/zones
+  --ambient-light-color 1 0.82 0.58
 ```
+
+Please find explanations for the command options in the [Vox2Pictoria documentation](../../README.md).
+
+### 3. Full Render
+
+Full render (this could take several hours, depending on your hardware):
 
 PowerShell:
 ```pwsh
-Vox2Pictoria --combine "maze/generated/zones/zone_pink.vox 560 592" "maze/generated/zones/zone_green.vox 560 -528" "maze/generated/zones/zone_blue.vox -560 592" "maze/generated/zones/zone_yellow.vox -560 -528" --scene-test-run --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58 -o maze/generated/zones
+Vox2Pictoria --combine "maze/generated/zones/zone_pink.vox 560 592" "maze/generated/zones/zone_green.vox 560 -528" "maze/generated/zones/zone_blue.vox -560 592" "maze/generated/zones/zone_yellow.vox -560 -528" --full-samples --full-resolution --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58
 ```
-
-### Full render
 
 Bash:
 ```bash
@@ -57,20 +75,5 @@ Vox2Pictoria \
   --sun-energy 1 \
   --sun-color 1 0.82 0.58 \
   --ambient-light-strength 0.4 \
-  --ambient-light-color 1 0.82 0.58 \
-  -o maze/generated/zones
+  --ambient-light-color 1 0.82 0.58
 ```
-
-PowerShell:
-```pwsh
-Vox2Pictoria --combine "maze/generated/zones/zone_pink.vox 560 592" "maze/generated/zones/zone_green.vox 560 -528" "maze/generated/zones/zone_blue.vox -560 592" "maze/generated/zones/zone_yellow.vox -560 -528" --full-samples --full-resolution --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58 -o maze/generated/zones
-```
-
-### Zone center coordinates
-
-| Zone | Position | Center (MV X, Y) |
-|---|---|---|
-| pink | top-left | 560, 592 |
-| green | top-right | 560, -528 |
-| blue | bottom-left | -560, 592 |
-| yellow | bottom-right | -560, -528 |

@@ -1,4 +1,5 @@
-"""
+"""TODO: This file is unoptimized and disorganized. It works but needs cleaning up.
+
 MagicaVoxel .vox file generator for the library maze project.
 Generates palette and individual part .vox files.
 

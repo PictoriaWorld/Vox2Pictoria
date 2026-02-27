@@ -1,4 +1,6 @@
-﻿"""Generate multi-model .vox files for each maze zone from maze_layout.png.
+﻿"""TODO: This file is unoptimized and disorganized. It works but needs cleaning up.
+
+Generate multi-model .vox files for each maze zone from maze_layout.png.
 
 Reads the 70x70 maze image (3px border around 64x64 grid), classifies tiles by zone and type,
 generates shelf and floor geometry, and writes per-zone .vox files.

@@ -45,6 +45,16 @@ internal class Program
             File.WriteAllText(jsonFilePath, json);
             Console.WriteLine("structure_infos created at: " + jsonFilePath + ", num structures: " + structureNameStructureInfoMap.Count);
 
+            // Skip rendering
+            //
+            // Just generate .pstr files from existing rendered images
+            if (options.NoRender)
+            {
+                await DefinitionService.GeneratePstrFiles(structureNameStructureInfoMap, options);
+                Console.WriteLine("Vox successfully processed (--no-render)");
+                Environment.Exit(0);
+            }
+
             // Create obj output directory
             if (!Directory.Exists(options.ObjOutputDirectory)) Directory.CreateDirectory(options.ObjOutputDirectory);
 
