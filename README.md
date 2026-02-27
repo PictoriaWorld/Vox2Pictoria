@@ -87,11 +87,12 @@ Vox2Pictoria is a program that takes a `.vox` file and produces locations, shape
 
    *Warning*: This can take several hours to complete, depending on the complexity of your MagicaVoxel scene and the performance of your computer.
 
-9. When step 8 completes, you'll find output images in `bin/images/`. You'll also find `structure_infos.json` in `bin/` - this file contains all of the data you need to create structures in Pictoria (structure names, locations, and shapes).
+9. When step 8 completes, you'll find `.pstr` files in `bin/StructureDefinitions/` - one per structure. Each `.pstr` file contains a structure's data (name, location, shape) and its image.
 
 10. In Pictoria, with the property you created earlier selected (*create > properties > select*), navigate to *edit > structures > create*.
 
-11. Drag on the property to start a selection, then enter a structure's name, location, and shape from the `structure_infos.json` file. Click *Select Images* and upload the corresponding image for the structure from the `bin/images/` directory. Finally, scroll down and click *buy*. Repeat this step for all structures in the `structure_infos.json` file.
+11. Drag a `.pstr` file onto the scene or into the *Import Definition* section of the create structure panel. This will populate the structure's name, location, shape, and image automatically. Click *buy* to create the structure. Repeat for each `.pstr` file in `bin/StructureDefinitions/`.
+    - *Note: in the future, Vox2Pictoria will generate a `.ppty` (Pictoria property) file that bundles all structures together. You'll be able to drag a single `.ppty` file into Pictoria in create property mode.*
 
 12. Congratulations! You have successfully created a property in Pictoria using MagicaVoxel and Vox2Pictoria.
 
