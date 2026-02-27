@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.0] - 27-02-2026
+### Added
+- `.pstr` file generation per structure, output to `bin/StructureDefinitions/`. Each `.pstr` is a gzip-compressed tar archive containing metadata JSON and the rendered image. `.pstr` files can be drag and dropped into Pictoria in Create Structure mode to import the structure.
+
 ## [1.1.1] - 25-02-2026
 ### Added
 - Validation that MagicaVoxel top level model/group (these correspond to Pictoria structures) bounding boxes do not intersect.
