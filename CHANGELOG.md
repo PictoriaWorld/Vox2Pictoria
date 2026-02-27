@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.1] - 27-02-2026
+### Added
+- `--no-render` option to regenerate structure_infos.json and .pstr files only. Useful for updating --min-tile-x/z without re-rendering. Rendered images must already exist on disk.
+- `-v`/`--version` flag that prints the assembly version.
+
 ## [1.2.0] - 27-02-2026
 ### Added
 - `.pstr` file generation per structure, output to `bin/StructureDefinitions/`. Each `.pstr` is a gzip-compressed tar archive containing metadata JSON and the rendered image. `.pstr` files can be drag and dropped into Pictoria in Create Structure mode to import the structure.

@@ -52,6 +52,7 @@ public class DefinitionService
         //
         // Note that Vox2Pictoria does not support multiple frames, so there is only one image per structure
         string imagePath = Path.Combine(options.ImagesDirectory, $"{structureInfo.Name}.png");
+        if (!File.Exists(imagePath)) throw new FileNotFoundException($"Image not found: '{imagePath}'. Ensure that structure images have been rendered.");
         await using var imageStream = File.OpenRead(imagePath);
         var imageEntry = new UstarTarEntry(TarEntryType.RegularFile, $"{innerDirectoryName}/{structureInfo.Name}_1.png") { DataStream = imageStream };
         await tarWriter.WriteEntryAsync(imageEntry);

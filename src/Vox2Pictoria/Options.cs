@@ -8,6 +8,7 @@ public class Options
     public List<(string voxRelativePath, int centerX, int centerY)> CombineInputs { get; }
     public int PropertyMinTileX { get; }
     public int PropertyMinTileZ { get; }
+    public bool NoRender { get; }
     public bool SceneTestRun { get; }
     public bool FullSamples { get; }
     public bool FullResolution { get; }
@@ -36,6 +37,7 @@ public class Options
         var tempCombineInputs = new List<(string voxRelativePath, int centerX, int centerY)>();
         int tempPropertyMinTileX = 0;
         int tempPropertyMinTileZ = 0;
+        bool tempNoRender = false;
         bool tempSceneTestRun = false;
         bool tempFullSamples = false;
         bool tempFullResolution = false;
@@ -57,11 +59,18 @@ public class Options
                     PrintHelp();
                     Environment.Exit(0);
                     break;
+                case "-v" or "--version":
+                    Console.WriteLine(typeof(Options).Assembly.GetName().Version?.ToString(3) ?? "unknown");
+                    Environment.Exit(0);
+                    break;
                 case "--min-tile-x":
                     if (i + 1 >= args.Length || !int.TryParse(args[++i], out tempPropertyMinTileX)) throw new ArgumentException("--min-tile-x requires an integer value.");
                     break;
                 case "--min-tile-z":
                     if (i + 1 >= args.Length || !int.TryParse(args[++i], out tempPropertyMinTileZ)) throw new ArgumentException("--min-tile-z requires an integer value.");
+                    break;
+                case "--no-render":
+                    tempNoRender = true;
                     break;
                 case "--scene-test-run":
                     tempSceneTestRun = true;
@@ -134,6 +143,7 @@ public class Options
         CombineInputs = tempCombineInputs;
         PropertyMinTileX = tempPropertyMinTileX;
         PropertyMinTileZ = tempPropertyMinTileZ;
+        NoRender = tempNoRender;
         SceneTestRun = tempSceneTestRun;
         FullSamples = tempFullSamples;
         FullResolution = tempFullResolution;
@@ -169,6 +179,7 @@ public class Options
               --combine "vox-path-1 cx cy" "vox-path-2 cx cy" ...               Combine multiple .vox files into one scene. Each argument is a quoted string with the .vox path and its MagicaVoxel X/Y center position. All .vox files must share the same palette. This option exists to work around MagicaVoxel's project dimensions limit. When specified, this option takes precedence over vox-path.
               --min-tile-x <integer>                                            Minimum tile-X coordinate of the property in Pictoria (default: 0)
               --min-tile-z <integer>                                            Minimum tile-Z coordinate of the property in Pictoria (default: 0)
+              --no-render                                                       Regenerate structure_infos.json and .pstr files only. Useful for updating --min-tile-x/z without re-rendering. Rendered images must already exist on disk. (default: off)
               --scene-test-run                                                  When specified, only a single 2D image of the full scene is rendered. Useful for previewing. (default: off)
               --full-samples                                                    When specified, renders images at maximum quality (2048 Blender Cycles samples). When not specified, 32 samples are used (faster, useful for previewing). (default: off)
               --full-resolution                                                 When specified, renders a larger image for higher quality after resizing. When not specified, renders a smaller image (faster, useful for previewing). (default: off)
@@ -180,6 +191,7 @@ public class Options
               --emission-bounce-multiplier <float>                              Multiplier for emission strength on bounced light in Blender. Controls how strongly emissive surfaces light up surroundings. (default: 3)
               --tone-mapper <name>                                              Blender tone mapper: AgX, Filmic, or Standard. Affects how colors appear in rendered images. (default: AgX)
               -o, --output <dir>                                                Output directory (default: current directory)
+              -v, --version                                                     Show version number
               -h, --help                                                        Show usage information
             """);
     }

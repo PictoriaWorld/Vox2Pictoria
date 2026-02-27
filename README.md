@@ -107,6 +107,7 @@ Usage: Vox2Pictoria [vox-path] [options]
 | `--combine "vox-path-1 cx cy" "vox-path-2 cx cy" ...` | N/A | Combine multiple `.vox` files into one scene. Each argument is a quoted string with the `.vox` path and its MagicaVoxel X/Y center position. All `.vox` files must share the same palette. This option exists to work around MagicaVoxel's project dimensions limit. When specified, this option takes precedence over `vox-path`. |
 | `--min-tile-x <integer>` | `0` | Minimum tile-X coordinate of the property in Pictoria. |
 | `--min-tile-z <integer>` | `0` | Minimum tile-Z coordinate of the property in Pictoria. |
+| `--no-render` | off | Regenerate structure_infos.json and .pstr files only. Useful for updating --min-tile-x/z without re-rendering. Rendered images must already exist on disk. |
 | `--scene-test-run` | off | When specified, only a single 2D image of the full scene is rendered. Useful for previewing. |
 | `--full-samples` | off | When specified, renders images at maximum quality (2048 Blender Cycles samples). When not specified, 32 samples are used (faster, useful for previewing). |
 | `--full-resolution` | off | When specified, renders a larger image for higher quality after resizing. When not specified, renders a smaller image (faster, useful for previewing). |
@@ -118,6 +119,7 @@ Usage: Vox2Pictoria [vox-path] [options]
 | `--emission-bounce-multiplier <float>` | `3` | Multiplier for emission strength on bounced light in Blender. Controls how strongly emissive surfaces light up surroundings. |
 | `--tone-mapper <name>` | `AgX` | Blender tone mapper: AgX, Filmic, or Standard. Affects how colors appear in rendered images. |
 | `-o, --output <dir>` | Current directory | Output directory. |
+| `-v, --version` | N/A | Show version number. |
 | `-h, --help` | N/A | Show usage information. |
 
 ### Examples
