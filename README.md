@@ -150,9 +150,13 @@ Vox2Pictoria ../art/garden.vox --min-tile-x 3 --min-tile-z 5 --full-samples --fu
 <output directory>/
 ├── bin/
 │   ├── structure_infos.json       # Structure data (names, locations, and shapes)
-│   └── images/                    # Structure 2D images (one per structure)
-│       ├── structure0.png
-│       ├── structure1.png
+│   ├── images/                    # Structure 2D images (one per structure)
+│   │   ├── structure0.png
+│   │   ├── structure1.png
+│   │   └── ...
+│   └── StructureDefinitions/      # .pstr files (one per structure, for drag-and-drop import into Pictoria)
+│       ├── structure0.pstr
+│       ├── structure1.pstr
 │       └── ...
 └── temp/                          # Intermediate files (can be deleted after processing)
 ```
