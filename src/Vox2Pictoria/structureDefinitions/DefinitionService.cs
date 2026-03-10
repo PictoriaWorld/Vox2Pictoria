@@ -34,7 +34,7 @@ public class DefinitionService
         // Create StructureDetails
         string name = structureInfo.Name;
         Cuboid structurePictoriaLocation = structureInfo.ShapeInfo.PictoriaLocation;
-        var structureDetails = new StructureDetails(name,
+        var structureDetails = new StructureDetails(1, name,
             (int)structureInfo.VolumeType,
             [structurePictoriaLocation.MinX, structurePictoriaLocation.MinY, structurePictoriaLocation.MinZ, structurePictoriaLocation.XLength, structurePictoriaLocation.YLength, structurePictoriaLocation.ZLength],
             "", []);
