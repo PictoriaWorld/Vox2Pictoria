@@ -47,11 +47,11 @@ public class DefinitionServiceIntegrationTests
     private static Dictionary<string, StructureInfo> CreateDummyStructureMap()
     {
         var dummyShapeInfo1 = new ShapeInfo();
-        dummyShapeInfo1.SetLocations(-48, 48, -32, 32, -64, 64);
+        dummyShapeInfo1.SetLocations(-48, 48, -32, 32, -64, 64); // SetLocations args: magicavoxel minX,maxX,minY,maxY,minZ,maxZ (X=pictoria Z, Y=pictoria -X, Z=pictoria Y)
         var dummyStructure1Info1 = new StructureInfo(dummyShapeInfo1, "dummyStructure1", VolumeType.Cuboid);
 
         var dummyShapeInfo2 = new ShapeInfo();
-        dummyShapeInfo2.SetLocations(56, 88, -16, 16, -32, 32);
+        dummyShapeInfo2.SetLocations(-16, 16, -64, -40, -32, 32);
         var dummyStructure1Info2 = new StructureInfo(dummyShapeInfo2, "dummyStructure2", VolumeType.Cuboid);
 
         return new Dictionary<string, StructureInfo>

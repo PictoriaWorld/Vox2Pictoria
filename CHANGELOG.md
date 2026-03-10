@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.5.0] - 11-03-2026
+### Added
+- `.ppty` file generation, output to `bin/PropertyDefinition/`. Each `.ppty` is a gzip-compressed tar archive bundling all structures in the scene with property-level metadata (tile dimensions). `.ppty` files can be drag and dropped into Pictoria in Create Property mode to import the property.
+- Integration tests for `DefinitionService` (`.pstr` and `.ppty` generation).
+
 ## [1.4.0] - 10-03-2026
 ### Added
 - `formatVersion` field in generated `.pstr` files. Set to `1` for the current format.
