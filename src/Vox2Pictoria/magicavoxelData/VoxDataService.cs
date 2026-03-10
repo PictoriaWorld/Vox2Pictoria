@@ -9,7 +9,7 @@ public class VoxDataService
     //
     // - https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox-extension.txt
     // - https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt
-    public static Dictionary<string, StructureInfo> ExtractStructureDataFromVox(VoxModel model, Options options)
+    public static Dictionary<string, StructureInfo> ExtractStructureDataFromVox(VoxModel model)
     {
         // Get frame infos
         //
@@ -44,12 +44,12 @@ public class VoxDataService
         SetStructureImageDimensions(structureNameStructureInfoMap);
 
         // Set Pictoria locations
-        SetPictoriaLocations(structureNameStructureInfoMap, options);
+        SetPictoriaLocations(structureNameStructureInfoMap);
 
         return structureNameStructureInfoMap;
     }
 
-    static void SetPictoriaLocations(Dictionary<string, StructureInfo> structureNameStructureInfoMap, Options options)
+    static void SetPictoriaLocations(Dictionary<string, StructureInfo> structureNameStructureInfoMap)
     {
         // Get bounding box
         double minX = double.MaxValue;
@@ -74,16 +74,6 @@ public class VoxDataService
         if (xLength % 2 != 0 || zLength % 2 != 0)
         {
             throw new InvalidOperationException($"Both xLength and zLength must be even. Current lengths are xLength: {xLength}, zLength: {zLength}.");
-        }
-
-        // Offset structures so the bounding mins are at the property mins
-        (int propertyMinCartesianLocationX, int propertyMinCartesianLocationZ) = CoordinatesService.TileXZToMinCartesianXZ(options.PropertyMinTileX, options.PropertyMinTileZ);
-        int xOffset = propertyMinCartesianLocationX - (int)minX;
-        int zOffset = propertyMinCartesianLocationZ - (int)minZ;
-        Console.WriteLine($"Scene to Pictoria offsets: X Offset: {xOffset}, Z Offset: {zOffset}");
-        foreach (StructureInfo structureInfo in structureNameStructureInfoMap.Values)
-        {
-            structureInfo.ShapeInfo.PictoriaLocation.Offset(xOffset, zOffset);
         }
     }
 
