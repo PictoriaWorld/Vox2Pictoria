@@ -1533,7 +1533,12 @@ def generate_zone(zone_name, zone_info, shelf_map, palette, output_dir,
     # boxes never overlap (bridge structures sit above bridge-path shelves).
     shelf_under_bridge = shelf_positions & bridge_tiles
     shelf_outside_bridge = shelf_positions - bridge_tiles
-    shelf_rects = (decompose_into_rectangles(shelf_outside_bridge)
+    # Decompose edge shelves separately from interior so decorated (tall) interior
+    # shelves don't push the bounding box above the height limit for edge tiles.
+    edge_shelves = shelf_outside_bridge & outer_ring
+    interior_shelves = shelf_outside_bridge - outer_ring
+    shelf_rects = (decompose_into_rectangles(interior_shelves)
+                   + decompose_into_rectangles(edge_shelves)
                    + decompose_into_rectangles(shelf_under_bridge))
     print(f"    {len(shelf_rects)} shelf rectangles", flush=True)
 
