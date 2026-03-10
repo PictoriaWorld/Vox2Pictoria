@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.0] - 10-03-2026
+### Added
+- `formatVersion` field in generated `.pstr` files. Set to `1` for the current format.
+
 ## [1.3.0] - 10-03-2026
 ### Changes
 - .pstr coordinates are now relative to the MagicaVoxel scene's center in the horizontal plane. This allows us to remove the `--min-tile-x` and `--min-tile-z` options, simplifying the workflow - e.g. you no longer need to
