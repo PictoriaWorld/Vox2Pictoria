@@ -73,28 +73,24 @@ Vox2Pictoria is a program that takes a `.vox` file and produces locations, shape
 
 4. The command above generates a single 2D image of the full scene - `<directory your .vox is in>/temp/renders/scene.png`. Verify that it looks correct - colors, composition, etc. If you decide to make changes to your `.vox`, repeat step 3 to re-preview.
 
-5. Once satisfied, navigate to [Pictoria](https://pictoria.world) in your browser. In Pictoria, navigate to *create > properties > buy* and create a selection of tiles that fits your MagicaVoxel scene.
-
-6. Note down the *Min tile-x* and *Min tile-z* coordinates of your tile selection in Pictoria.
-
-7. Buy the property in Pictoria.
-
-8. Run a full render in the directory your `.vox` is in, specifying the *Min tile-x* and *Min tile-z* coordinates you noted earlier:
+5. Once satisfied, run a full render in the directory your `.vox` is in:
 
    ```
-   Vox2Pictoria --full-samples --full-resolution --min-tile-x <minTileX> --min-tile-z <minTileZ>
+   Vox2Pictoria --full-samples --full-resolution
    ```
 
    *Warning*: This can take several hours to complete, depending on the complexity of your MagicaVoxel scene and the performance of your computer.
 
-9. When step 8 completes, you'll find `.pstr` files in `bin/StructureDefinitions/` - one per structure. Each `.pstr` file contains a structure's data (name, location, shape) and its image.
+6. When step 5 completes, you'll find `.pstr` files in `bin/StructureDefinitions/` - one per structure. Each `.pstr` file contains a structure's data (name, location, shape) and its image.
 
-10. In Pictoria, with the property you created earlier selected (*create > properties > select*), navigate to *edit > structures > create*.
+7. Next, navigate to [Pictoria](https://pictoria.world) in your browser. In Pictoria, navigate to *create > properties > buy*. Create a selection of tiles that fits your MagicaVoxel scene. Buy the property.
 
-11. Drag a `.pstr` file onto the scene or into the *Import Definition* section of the create structure panel. This will populate the structure's name, location, shape, and image automatically. Click *buy* to create the structure. Repeat for each `.pstr` file in `bin/StructureDefinitions/`.
+8. After buying your property, ensure that it is selected (by default, after buying a property, it is selected - if it isn't, navigate to *create > properties > select*), then navigate to *edit > structures > create*.
+
+9. Drag a `.pstr` file onto the scene or into the *Import Definition* section of the create structure panel. This will populate the structure's name, location, shape, and image automatically. Click *buy* to create the structure. Repeat for each `.pstr` file in `bin/StructureDefinitions/`.
     - *Note: in the future, Vox2Pictoria will generate a `.ppty` (Pictoria property) file that bundles all structures together. You'll be able to drag a single `.ppty` file into Pictoria in create property mode.*
 
-12. Congratulations! You have successfully created a property in Pictoria using MagicaVoxel and Vox2Pictoria.
+10. Congratulations! You have successfully created a property in Pictoria using MagicaVoxel and Vox2Pictoria.
 
 ### Arguments
 
@@ -106,9 +102,7 @@ Usage: Vox2Pictoria [vox-path] [options]
 |-------------------|---------|-------------|
 | `vox-path` | First `.vox` in current directory | Path to the `.vox` file. |
 | `--combine "vox-path-1 cx cy" "vox-path-2 cx cy" ...` | N/A | Combine multiple `.vox` files into one scene. Each argument is a quoted string with the `.vox` path and its MagicaVoxel X/Y center position. All `.vox` files must share the same palette. This option exists to work around MagicaVoxel's project dimensions limit. When specified, this option takes precedence over `vox-path`. |
-| `--min-tile-x <integer>` | `0` | Minimum tile-X coordinate of the property in Pictoria. |
-| `--min-tile-z <integer>` | `0` | Minimum tile-Z coordinate of the property in Pictoria. |
-| `--no-render` | off | Regenerate structure_infos.json and .pstr files only. Useful for updating --min-tile-x/z without re-rendering. Rendered images must already exist on disk. |
+| `--no-render` | off | Regenerate structure_infos.json and .pstr files only. Useful when re-rendering is not needed (e.g. .pstr or .json files lost/corrupted but rendered images must already exist on disk) |
 | `--scene-test-run` | off | When specified, only a single 2D image of the full scene is rendered. Useful for previewing. |
 | `--full-samples` | off | When specified, renders images at maximum quality (2048 Blender Cycles samples). When not specified, 32 samples are used (faster, useful for previewing). |
 | `--full-resolution` | off | When specified, renders a larger image for higher quality after resizing. When not specified, renders a smaller image (faster, useful for previewing). |
@@ -137,12 +131,12 @@ Vox2Pictoria
 
 Generate all structure images at maximum quality for Pictoria, assumes `.vox` is in the current directory:
 ```
-Vox2Pictoria --min-tile-x <minTileX> --min-tile-z <minTileZ> --full-samples --full-resolution
+Vox2Pictoria --full-samples --full-resolution
 ```
 
-Specify a vox file, tile coordinates, and output directory:
+Specify a vox file and output directory:
 ```
-Vox2Pictoria ../art/garden.vox --min-tile-x 3 --min-tile-z 5 --full-samples --full-resolution -o ./output
+Vox2Pictoria ../art/garden.vox --full-samples --full-resolution -o ./output
 ```
 
 ### Output Directory Structure

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.0] - 10-03-2026
+### Changes
+- .pstr coordinates are now relative to the MagicaVoxel scene's center in the horizontal plane. This allows us to remove the `--min-tile-x` and `--min-tile-z` options, simplifying the workflow - e.g. you no longer need to
+re-run Vox2Pictoria if your property's tile location changes.
+
+### Removed
+- `--min-tile-x` and `--min-tile-z` CLI arguments. Pictoria now handles the coordinate offset on import.
+
 ## [1.2.1] - 27-02-2026
 ### Added
 - `--no-render` option to regenerate structure_infos.json and .pstr files only. Useful for updating --min-tile-x/z without re-rendering. Rendered images must already exist on disk.
