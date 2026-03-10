@@ -51,6 +51,7 @@ internal class Program
             if (options.NoRender)
             {
                 await DefinitionService.GeneratePstrFiles(structureNameStructureInfoMap, options);
+                await DefinitionService.GeneratePptyFile(structureNameStructureInfoMap, options);
                 Console.WriteLine("Vox successfully processed (--no-render)");
                 Environment.Exit(0);
             }
@@ -129,6 +130,9 @@ internal class Program
 
                 // Generate .pstr files
                 await DefinitionService.GeneratePstrFiles(structureNameStructureInfoMap, options);
+
+                // Generate .ppty file
+                await DefinitionService.GeneratePptyFile(structureNameStructureInfoMap, options);
             }
 
             // Success

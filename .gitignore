@@ -317,6 +317,13 @@ paket-files/
 __pycache__/
 *.pyc
 
+# Vox2Pictoria test assets — un-ignore committed bin/images/, ignore test output dirs
+!tests/Vox2Pictoria.Tests/DefinitionServiceIntegrationTestsAssets/bin/
+!tests/Vox2Pictoria.Tests/DefinitionServiceIntegrationTestsAssets/bin/images/
+!tests/Vox2Pictoria.Tests/DefinitionServiceIntegrationTestsAssets/bin/images/**
+tests/Vox2Pictoria.Tests/DefinitionServiceIntegrationTestsAssets/bin/StructureDefinitions/
+tests/Vox2Pictoria.Tests/DefinitionServiceIntegrationTestsAssets/bin/PropertyDefinition/
+
 # Maze generated output
 examples/maze/generated/
 
