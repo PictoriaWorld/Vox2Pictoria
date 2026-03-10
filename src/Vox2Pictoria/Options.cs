@@ -26,6 +26,7 @@ public class Options
     public string RendersDirectory { get; }
     public string ImagesDirectory { get; }
     public string StructureDefinitionsDirectory { get; }
+    public string PropertyDefinitionDirectory { get; }
     public string BlenderOptionsPath { get; }
 
     public Options(string[] args)
@@ -153,6 +154,7 @@ public class Options
         BinDirectory = Path.Combine(resolvedOutputDirectory, "bin");
         ImagesDirectory = Path.Combine(BinDirectory, "images");
         StructureDefinitionsDirectory = Path.Combine(BinDirectory, "StructureDefinitions");
+        PropertyDefinitionDirectory = Path.Combine(BinDirectory, "PropertyDefinition");
     }
 
     private static void PrintHelp()
@@ -165,7 +167,7 @@ public class Options
 
             Options:
               --combine "vox-path-1 cx cy" "vox-path-2 cx cy" ...               Combine multiple .vox files into one scene. Each argument is a quoted string with the .vox path and its MagicaVoxel X/Y center position. All .vox files must share the same palette. This option exists to work around MagicaVoxel's project dimensions limit. When specified, this option takes precedence over vox-path.
-              --no-render                                                       Regenerate structure_infos.json and .pstr files only. Useful when re-rendering is not needed (e.g. .pstr or .json files lost/corrupted but rendered images must already exist on disk). (default: off)
+              --no-render                                                       Regenerate structure_infos.json, .pstr, and .ppty files only. Useful when re-rendering is not needed (e.g. .pstr, .ppty, or .json files lost/corrupted but rendered images must already exist on disk). (default: off)
               --scene-test-run                                                  When specified, only a single 2D image of the full scene is rendered. Useful for previewing. (default: off)
               --full-samples                                                    When specified, renders images at maximum quality (2048 Blender Cycles samples). When not specified, 32 samples are used (faster, useful for previewing). (default: off)
               --full-resolution                                                 When specified, renders a larger image for higher quality after resizing. When not specified, renders a smaller image (faster, useful for previewing). (default: off)

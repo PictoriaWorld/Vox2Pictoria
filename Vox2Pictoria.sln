@@ -5,19 +5,52 @@ VisualStudioVersion = 17.8.34322.80
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vox2Pictoria", "src\Vox2Pictoria\Vox2Pictoria.csproj", "{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vox2Pictoria.Tests", "tests\Vox2Pictoria.Tests\Vox2Pictoria.Tests.csproj", "{FFD96803-7CCA-4D75-8E29-17B5BA078128}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Debug|x64.Build.0 = Debug|Any CPU
+		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Debug|x86.Build.0 = Debug|Any CPU
 		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Release|x64.ActiveCfg = Release|Any CPU
+		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Release|x64.Build.0 = Release|Any CPU
+		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Release|x86.ActiveCfg = Release|Any CPU
+		{B6BC38F5-66ED-4538-8E04-8BD36BBEEB3A}.Release|x86.Build.0 = Release|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Debug|x64.Build.0 = Debug|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Debug|x86.Build.0 = Debug|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Release|x64.ActiveCfg = Release|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Release|x64.Build.0 = Release|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Release|x86.ActiveCfg = Release|Any CPU
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FFD96803-7CCA-4D75-8E29-17B5BA078128} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4D581851-353A-4F58-AAD1-DE49C8A03448}
