@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.5.1] - 14-03-2026
+### Fixed
+- `.ppty` and `.pstr` files now include the normalized MD5 base64 hash for structure images (`imageNormalizedMd5Base64`). Previously this field was always empty, causing import validation to fail in Pictoria.
+
 ## [1.5.0] - 11-03-2026
 ### Added
 - `.ppty` file generation, output to `bin/PropertyDefinition/`. Each `.ppty` is a gzip-compressed tar archive bundling all structures in the scene with property-level metadata (tile dimensions). `.ppty` files can be drag and dropped into Pictoria in Create Property mode to import the property.
