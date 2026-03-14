@@ -1,5 +1,6 @@
 using System.Formats.Tar;
 using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace Vox2Pictoria;
@@ -96,13 +97,19 @@ public class DefinitionService
         var directoryEntry = new UstarTarEntry(TarEntryType.Directory, $"{directoryPath}/");
         await tarWriter.WriteEntryAsync(directoryEntry);
 
-        // Create StructureDetails
+        // Read image and compute normalized MD5 hash
         string name = structureInfo.Name;
+        string imagePath = Path.Combine(options.ImagesDirectory, $"{name}.png");
+        if (!File.Exists(imagePath)) throw new FileNotFoundException($"Image not found: '{imagePath}'. Ensure that structure images have been rendered.");
+        byte[] imageBytes = await File.ReadAllBytesAsync(imagePath);
+        string imageNormalizedMd5Base64 = GetImageNormalizedMd5Base64(imageBytes);
+
+        // Create StructureDetails
         Cuboid structurePictoriaLocation = structureInfo.ShapeInfo.PictoriaLocation;
         var structureDetails = new StructureDetails(1, name,
             (int)structureInfo.VolumeType,
             [structurePictoriaLocation.MinX, structurePictoriaLocation.MinY, structurePictoriaLocation.MinZ, structurePictoriaLocation.XLength, structurePictoriaLocation.YLength, structurePictoriaLocation.ZLength],
-            "", []);
+            imageNormalizedMd5Base64, []);
 
         // Serialize StructureDetails to JSON
         var structureDetailsJsonStream = new MemoryStream();
@@ -114,10 +121,29 @@ public class DefinitionService
         await tarWriter.WriteEntryAsync(structureDetailsJsonEntry);
 
         // Image entry (Vox2Pictoria does not support multiple frames, so there is only one image per structure)
-        string imagePath = Path.Combine(options.ImagesDirectory, $"{name}.png");
-        if (!File.Exists(imagePath)) throw new FileNotFoundException($"Image not found: '{imagePath}'. Ensure that structure images have been rendered.");
-        await using var imageStream = File.OpenRead(imagePath);
+        var imageStream = new MemoryStream(imageBytes);
         var imageEntry = new UstarTarEntry(TarEntryType.RegularFile, $"{directoryPath}/{name}_1.png") { DataStream = imageStream };
         await tarWriter.WriteEntryAsync(imageEntry);
+    }
+
+    /// <summary>
+    /// Computes the normalized MD5 base64 hash for an image. Mirrors Pictoria.Server's ImageDataService.GetImageNormalizedMd5Base64.
+    /// </summary>
+    private static string GetImageNormalizedMd5Base64(byte[] imageBytes)
+    {
+        byte[] hash = MD5.HashData(imageBytes);
+        string base64 = Convert.ToBase64String(hash);
+
+        // Take first 22 chars, replace '+' with '_' and '/' with '-'
+        Span<char> result = stackalloc char[22];
+        for (int i = 0; i < 22; i++)
+        {
+            char c = base64[i];
+            if (c == '+') result[i] = '_';
+            else if (c == '/') result[i] = '-';
+            else result[i] = c;
+        }
+
+        return new string(result);
     }
 }
