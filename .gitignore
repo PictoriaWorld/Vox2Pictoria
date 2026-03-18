@@ -324,8 +324,8 @@ __pycache__/
 tests/Vox2Pictoria.Tests/DefinitionServiceIntegrationTestsAssets/bin/StructureDefinitions/
 tests/Vox2Pictoria.Tests/DefinitionServiceIntegrationTestsAssets/bin/PropertyDefinition/
 
-# Maze generated output
-examples/maze/generated/
+# Generated output
+**/generated/
 
 # Cake - Uncomment if you are using it
 # tools/**
