@@ -60,7 +60,9 @@
       "Bash(printenv:*)",
       "WebFetch(domain:extensions.blender.org)",
       "Bash(INPUT=\"C:/Projects/Vox2Pictoria/Vox2Pictoria/examples/maze/generated/zones/temp/renders/scene.png\")",
-      "Bash(magick:*)"
+      "Bash(magick:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)"
     ]
   }
 }

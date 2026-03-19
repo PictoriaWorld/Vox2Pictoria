@@ -138,34 +138,30 @@ INNER_TREES = [
 def compute_boardwalk_boundaries(rng):
     """Compute deck z at each row boundary for the inclined boardwalk.
 
-    Returns list of 15 world-z values (14 segments, rows 31 down to 18).
-    boundaries[0] = south edge of row 31 (entry)
-    boundaries[14] = north edge of row 18 (meets platform at PLATFORM_DECK_Z)
-    Random weight variation produces different slopes per segment (rickety feel).
+    Returns list of 13 world-z values (12 segments).
+    boundaries[0] = south edge (entry_z=1)
+    boundaries[12] = PLATFORM_DECK_Z
+    Total rise = 279. Bresenham handles non-divisible rises per segment.
+    Random weights give varied slopes for a rustic feel.
     """
-    n_segments = BOARDWALK_ROW_START - BOARDWALK_ROW_END + 1  # 14
-    n_boundaries = n_segments + 1
+    n_segments = BOARDWALK_ROW_START - BOARDWALK_ROW_END + 1  # 12
+    entry_z = 1
+    total_rise = PLATFORM_DECK_Z  # 280 — boardwalk spans 280 voxels of rise
 
-    # Ground z at boardwalk entry center
-    wy_center = int((GRID_SIZE - 0.5 - (BOARDWALK_COLS[0] + BOARDWALK_COLS[1]) / 2) * TILE_SIZE)
-    wx_entry = (GRID_SIZE - 1 - BOARDWALK_ROW_START) * TILE_SIZE
-    entry_z = _hill_elevation(wx_entry, wy_center) + DECK_CLEARANCE
-
-    total_rise = PLATFORM_DECK_Z - entry_z
-
-    # Random weights → varied slope per segment
-    weights = [rng.uniform(0.5, 1.5) for _ in range(n_segments)]
-    rises = [total_rise * w / sum(weights) for w in weights]
-    rises = [max(3.0, r) for r in rises]
-    scale = total_rise / sum(rises)
-    rises = [r * scale for r in rises]
+    # Random weights → varied rise per segment
+    weights = [rng.uniform(0.7, 1.3) for _ in range(n_segments)]
+    total_w = sum(weights)
+    # Distribute total_rise as integers, rounding to keep sum exact
+    rises = [int(total_rise * w / total_w) for w in weights]
+    # Fix rounding error: distribute remainder
+    remainder = total_rise - sum(rises)
+    for i in range(remainder):
+        rises[i] += 1
 
     boundaries = [entry_z]
     for rise in rises:
         boundaries.append(boundaries[-1] + rise)
-    boundaries[-1] = PLATFORM_DECK_Z
-
-    return [int(z) for z in boundaries]
+    return boundaries
 
 
 # ============================================================
@@ -346,12 +342,18 @@ def _voxelmodel_to_vertical_slices(model):
     Returns list of (serialized_model_dict, z_offset) tuples."""
     if not model._v:
         return []
-    max_z = max(z for (_, _, z) in model._v.keys())
+    explicit = model._explicit_size
+    max_z = (explicit[2] - 1) if explicit else max(z for (_, _, z) in model._v.keys())
     slices = []
     for z_base in range(0, max_z + 1, 256):
         z_top = z_base + 255
         xyzi_bytes = bytearray()
-        maxes = (0, 0, 0)
+        # Start maxes from explicit size if set, else from content
+        if explicit:
+            slice_max_z = min(explicit[2] - 1, z_top) - z_base
+            maxes = (explicit[0] - 1, explicit[1] - 1, slice_max_z)
+        else:
+            maxes = (0, 0, 0)
         count = 0
         for (x, y, z), c in model._v.items():
             if z < z_base or z > z_top:
@@ -360,9 +362,10 @@ def _voxelmodel_to_vertical_slices(model):
                 continue
             lz = z - z_base  # local z within this slice
             xyzi_bytes.extend((x, y, lz, c))
-            if x > maxes[0]: maxes = (x, maxes[1], maxes[2])
-            if y > maxes[1]: maxes = (maxes[0], y, maxes[2])
-            if lz > maxes[2]: maxes = (maxes[0], maxes[1], lz)
+            if not explicit:
+                if x > maxes[0]: maxes = (x, maxes[1], maxes[2])
+                if y > maxes[1]: maxes = (maxes[0], y, maxes[2])
+                if lz > maxes[2]: maxes = (maxes[0], maxes[1], lz)
             count += 1
         if count > 0:
             slices.append((_serialize_model(xyzi_bytes, count, maxes), z_base))
@@ -437,11 +440,16 @@ def build_forest_model(mr, mc, mr_end, mc_end, zone_max_height, rng, grid, board
         return _HEIGHT_TABLE[min(d, len(_HEIGHT_TABLE) - 1)] - base_elev - 1
 
     # Fill ground: hill terrain relative to base_elev
+    # Boardwalk tiles get flat ground at z=1
     for lx in range(width):
         for ly in range(depth):
             wx, wy = _local_to_world(lx, ly)
-            elev = _hill_elevation(wx, wy) - base_elev
-            elev = max(0, elev)
+            tile_r = GRID_SIZE - 1 - wx // TILE_SIZE
+            tile_c = GRID_SIZE - 1 - wy // TILE_SIZE
+            if (tile_r, tile_c) in boardwalk_tiles or grid.get((tile_r, tile_c)) == 'path':
+                elev = max(0, 1 - base_elev)
+            else:
+                elev = max(0, _hill_elevation(wx, wy) - base_elev)
             edge_dist = min(wx, wy, WORLD_SIZE - 1 - wx, WORLD_SIZE - 1 - wy)
             is_outer_ring = edge_dist < TILE_SIZE
 
@@ -752,51 +760,6 @@ def _weather_planks(m, rng):
                                            MOSS_TONES[5], MOSS_TONES[7]]))
 
 
-def build_boardwalk_model(mr, mc, mr_end, mc_end, rng, grid):
-    """Build boardwalk model: flat deck + support posts."""
-    width = (mr_end - mr + 1) * TILE_SIZE
-    depth = (mc_end - mc + 1) * TILE_SIZE
-    m = VoxelModel()
-
-    for r in range(mr, mr_end + 1):
-        for c in range(mc, mc_end + 1):
-            if grid.get((r, c)) != 'boardwalk':
-                continue
-            lx_base = (mr_end - r) * TILE_SIZE
-            ly_base = (mc_end - c) * TILE_SIZE
-
-            # Ground under boardwalk
-            for dx in range(TILE_SIZE):
-                for dy in range(TILE_SIZE):
-                    m.set(lx_base + dx, ly_base + dy, 0, rng.choice(EARTH_TONES))
-
-            # Support posts
-            for px, py in [(2, 2), (2, 29), (29, 2), (29, 29)]:
-                for z in range(1, 3):
-                    m.set(lx_base + px, ly_base + py, z, rng.choice(BOARDWALK_TONES))
-                    m.set(lx_base + px + 1, ly_base + py, z, rng.choice(BOARDWALK_TONES))
-
-            # Deck planks at z=3-4
-            for dy in range(TILE_SIZE):
-                plank_pat = streak(BOARDWALK_TONES, TILE_SIZE, rng)
-                is_joint = (dy % 4 == 0)
-                for dx in range(TILE_SIZE):
-                    if rng.random() < 0.02:
-                        continue
-                    if is_joint:
-                        c = rng.choice([BARK_TONES[0], BARK_TONES[1]])
-                    else:
-                        c = plank_pat[dx]
-                    z_base = 3
-                    if rng.random() < 0.08:
-                        z_base = 4
-                    m.set(lx_base + dx, ly_base + dy, z_base, c)
-                    if z_base == 3:
-                        m.set(lx_base + dx, ly_base + dy, 4, c)
-
-    return m
-
-
 def build_clearing_model(mr, mc, mr_end, mc_end, rng):
     """Build clearing model: ground + sparse low cover."""
     width = (mr_end - mr + 1) * TILE_SIZE
@@ -822,25 +785,29 @@ def build_clearing_model(mr, mc, mr_end, mc_end, rng):
 
 
 def _build_bearer_beams(m, lx_base, ly_base, width, depth, rng, z_func,
-                        beam_positions, beam_width_range=(1, 2)):
+                        beam_positions, beam_width_range=(1, 2), lx_offset=0):
     """Lay longitudinal bearer beams running along lx (direction of rise).
 
     These beams sit 1-2 voxels below the plank surface and provide the
     structural support that planks rest on.
     beam_positions: list of ly positions where beams run.
     beam_width_range: (min, max) width of each beam in ly direction.
+    lx_offset: shift beam draw position in the ascending direction.
     """
     for by in beam_positions:
         beam_width = rng.randint(beam_width_range[0], beam_width_range[1])
         for lx in range(width):
-            base_z = z_func(lx)
-            beam_z = base_z - 1  # beams sit just under the plank surface
+            draw_lx = lx + lx_offset
+            if draw_lx >= width:
+                break
+            base_z = z_func(lx)  # z from original position
+            beam_z = base_z - 1
             for dw in range(beam_width):
                 py = ly_base + by + dw
                 if 0 <= py < ly_base + depth:
-                    if rng.random() < 0.02:  # occasional gap/rot
+                    if rng.random() < 0.02:
                         continue
-                    m.set(lx_base + lx, py, beam_z, rng.choice(BOARDWALK_TONES))
+                    m.set(lx_base + draw_lx, py, beam_z, rng.choice(BOARDWALK_TONES))
 
 
 def _lay_planks(m, lx_base, ly_base, width, depth, rng, z_func,
@@ -875,9 +842,9 @@ def _lay_planks(m, lx_base, ly_base, width, depth, rng, z_func,
         plank_len = dy_end - dy_start
         tone = streak(BOARDWALK_TONES, plank_len, rng)
 
-        # Each plank is flat — use z at its center lx
-        center_lx = min(lx + plank_w // 2, width - 1)
-        base_z = z_func(center_lx) + z_wobble
+        # Use z at leftmost edge — entire plank is a flat stair tread
+        # guaranteed under the hypotenuse (int truncation creates bottom/top gaps)
+        base_z = z_func(lx) + z_wobble
 
         for pw in range(plank_w):
             curr_lx = lx + pw
@@ -908,19 +875,101 @@ def _lay_planks(m, lx_base, ly_base, width, depth, rng, z_func,
         lx += plank_w
 
 
-def _build_inclined_deck(m, lx_base, ly_base, south_z, north_z, width, depth, rng):
-    """Build an inclined deck: bearer beams + planks on top."""
+def _build_inclined_deck(m, lx_base, ly_base, south_z, north_z, width, depth, rng,
+                         n_steps=3, include_transition_step=False):
+    """Build an inclined deck as a staircase under the hypotenuse.
+
+    N steps with stepDepth = advance / (N+1).
+    Step i cumulative z = floor(rise * i / (N+1))  (Bresenham integer formula).
+    Varying integer step heights track the hypotenuse without requiring
+    rise to be divisible by (N+1).
+
+    If include_transition_step, step 0 is included (at z below south_z)
+    to bridge the gap from the previous segment. It ends up in the base model.
+    """
+    advance = width
+    rise = north_z - south_z
+    n_div = n_steps + 1
+    step_depth = advance / n_div
+    step_rise = rise / n_div
+    def _step_start(i):
+        return math.ceil(i * step_depth)
     def z_func(lx):
-        t = lx / max(1, width - 1)
-        return int(south_z + t * (north_z - south_z))
+        if rise <= 0:
+            return south_z
+        step = min(lx * n_div // advance, n_steps)
+        if step == 0 and not include_transition_step:
+            return south_z - 1  # bottom gap — no deck in prism
+        return south_z + math.floor(step * step_rise) - 1
     # Bearer beams at ~1/4, 1/2, 3/4 across the depth (with jitter)
     beam_positions = [
         max(3, depth // 4 + rng.randint(-2, 2)),
         depth // 2 + rng.randint(-2, 2),
         min(depth - 4, 3 * depth // 4 + rng.randint(-2, 2)),
     ]
-    _build_bearer_beams(m, lx_base, ly_base, width, depth, rng, z_func, beam_positions)
-    _lay_planks(m, lx_base, ly_base, width, depth, rng, z_func)
+    # Beam diagonal: starts 1 step_rise lower when transition step included
+    beam_z_start = south_z - 1 if not include_transition_step else south_z - 1 - math.floor(step_rise)
+    def beam_z_func(lx):
+        return beam_z_start + (rise * lx) // max(1, width)
+    _build_bearer_beams(m, lx_base, ly_base, width, depth, rng, beam_z_func, beam_positions,
+                        lx_offset=2)
+
+    # Lay one plank per step with rickety varying widths
+    plank_drawn_widths = (3, 4, 4, 4, 5, 5, 5, 6, 6, 6)
+    offset_choices = (0, 0, 0, 1, 1, 2)
+    z_wobble_choices = (0, 0, 0, 0, -1)
+    trim_choices = (0, 0, 0, 1, 2, 3, 5, 7)
+    first_step = 0 if include_transition_step else 1
+    print(f"  step_depth={step_depth}, step_rise={step_rise}, n_steps={n_steps}, n_div={n_div}")
+    for i in range(first_step, n_div):
+        step_lx = _step_start(i)
+        step_z = south_z + math.floor(i * step_rise) - 1 + rng.choice(z_wobble_choices)
+
+        # Random offset forward (ascending direction) — creates rickety gaps
+        offset = rng.choice(offset_choices)
+        plank_lx = step_lx + offset
+
+        # Random drawn width 3-6, favouring wider planks
+        plank_w = rng.choice(plank_drawn_widths)
+        plank_w = min(plank_w, width - plank_lx)
+
+        prism_z = step_z - south_z
+        print(f"  step {i}: start_x={plank_lx} (step_lx={step_lx}+offset={offset}), "
+              f"width={plank_w}, end_x={plank_lx + plank_w}, z={prism_z}")
+
+        # Per-plank ly trim and color streak
+        trim_start = rng.choices(trim_choices, k=1)[0]
+        trim_end = rng.choices(trim_choices, k=1)[0]
+        dy_start = trim_start
+        dy_end = depth - trim_end
+        if dy_end <= dy_start + 4:
+            dy_start = 0
+            dy_end = depth
+        plank_len = dy_end - dy_start
+        tone = streak(BOARDWALK_TONES, plank_len, rng)
+
+        for pw in range(plank_w):
+            curr_lx = plank_lx + pw
+            if curr_lx >= width:
+                break
+            # Irregular edges: jitter start/end per column
+            row_start = max(0, dy_start + rng.randint(-1, 2))
+            row_end = min(depth, dy_end + rng.randint(-2, 1))
+            if row_end <= row_start:
+                continue
+            for ply in range(row_end - row_start):
+                if rng.random() < 0.03:
+                    continue
+                tone_idx = max(0, min(ply + row_start - dy_start, plank_len - 1))
+                c = tone[tone_idx]
+                if rng.random() < 0.20:
+                    bw_idx = BOARDWALK_TONES.index(c) if c in BOARDWALK_TONES else -1
+                    if bw_idx >= 0:
+                        new_idx = max(0, min(len(BOARDWALK_TONES) - 1,
+                                             bw_idx + rng.choice([-1, 1])))
+                        c = BOARDWALK_TONES[new_idx]
+                m.set(lx_base + curr_lx, ly_base + row_start + ply, step_z, c)
+
     return beam_positions
 
 
@@ -946,57 +995,54 @@ def _build_flat_deck(m, lx_base, ly_base, deck_z, width, depth, rng,
     return beam_positions
 
 
-def build_boardwalk_segment(row, south_z, north_z, rng):
-    """Build one inclined boardwalk segment: 1 tile deep × 2 tiles wide (32×64).
+def build_boardwalk_segment(row, south_z, north_z, rng, n_tiles=1, include_transition_step=False):
+    """Build a boardwalk segment spanning n_tiles tiles as one prism model.
 
-    south_z/north_z are world-z deck heights at the south/north edges.
-    lx=0 is south edge, lx=31 is north edge. Planks run along ly (64 wide).
+    Returns (prism_model, base_model_or_None).
+    prism_model has explicit size advance × depth × (rise + 1).
+    base_model is None when south_z <= 1 (nothing meaningful below).
     """
-    mc_end = BOARDWALK_COLS[1]  # 16
-    width = TILE_SIZE            # 32 along direction of rise
-    depth = (BOARDWALK_COLS[1] - BOARDWALK_COLS[0] + 1) * TILE_SIZE  # 64 wide
+    mc_end = BOARDWALK_COLS[1]
+    width = n_tiles * TILE_SIZE
+    depth = (BOARDWALK_COLS[1] - BOARDWALK_COLS[0] + 1) * TILE_SIZE  # 64
     m = VoxelModel()
 
-    def _local_to_world(lx, ly):
-        wx = (GRID_SIZE - 1 - row) * TILE_SIZE + lx
-        wy = (GRID_SIZE - 1 - mc_end) * TILE_SIZE + ly
-        return wx, wy
+    south_z_local = south_z
+    north_z_local = north_z
 
-    # Min ground elevation for base_elev
-    min_elev = 999
-    for lx in range(0, width, 4):
-        for ly in range(0, depth, 4):
-            wx, wy = _local_to_world(lx, ly)
-            min_elev = min(min_elev, _hill_elevation(wx, wy))
-    base_elev = max(0, min_elev - 2)
-
-    south_z_local = south_z - base_elev
-    north_z_local = north_z - base_elev
-
+    rise = north_z_local - south_z_local
+    advance = width
+    n_div = advance // 4 * 85 // 100  # 85% of original, average step depth ≈ 4.7
+    n_steps = n_div - 1
+    step_depth_local = advance / n_div
+    step_rise_local = rise / n_div
     def _deck_z_at_lx(lx):
-        t = lx / max(1, width - 1)
-        return int(south_z_local + t * (north_z_local - south_z_local))
+        if rise <= 0:
+            return south_z_local
+        step = min(int(lx / step_depth_local), n_steps)
+        if step == 0:
+            return south_z_local  # bottom gap
+        return south_z_local + math.floor(step * step_rise_local)
 
     # Fill ground terrain
     for lx in range(width):
         for ly in range(depth):
-            wx, wy = _local_to_world(lx, ly)
-            elev = max(0, _hill_elevation(wx, wy) - base_elev)
-            for z in range(elev + 1):
-                m.set(lx, ly, z, rng.choice(EARTH_TONES))
+            m.set(lx, ly, 0, rng.choice(EARTH_TONES))
 
     # Build inclined deck (beams + planks); get beam ly positions back
-    beam_positions = _build_inclined_deck(m, 0, 0, south_z_local, north_z_local, width, depth, rng)
+    beam_positions = _build_inclined_deck(m, 0, 0, south_z_local, north_z_local, width, depth, rng,
+                                          n_steps=n_steps,
+                                          include_transition_step=include_transition_step)
 
-    # Stilts: 50% of candidate positions
+    # Stilts: candidates every ~16 lx along beam positions and edges
     margin_x = 4
-    stilt_lx_positions = [margin_x, width // 2, width - 1 - margin_x]
+    margin_y = 4
+    stilt_lx_positions = list(range(margin_x, width - margin_x, 16))
     all_stilt_candidates = []
     for slx in stilt_lx_positions:
         for by in beam_positions:
             all_stilt_candidates.append((slx, by))
-    margin_y = 4
-    for slx in [margin_x, width - 1 - margin_x]:
+    for slx in stilt_lx_positions:
         for sy in [margin_y, depth - 1 - margin_y]:
             all_stilt_candidates.append((slx, sy))
     # Keep 50%
@@ -1007,39 +1053,24 @@ def build_boardwalk_segment(row, south_z, north_z, rng):
                      if not ((dx in (0, 3)) and (dy in (0, 3)))]
 
     for sx, sy in stilt_positions:
-        wx, wy = _local_to_world(min(sx, width - 1), min(sy, depth - 1))
-        gz = max(0, _hill_elevation(wx, wy) - base_elev)
         dz = _deck_z_at_lx(sx) - 1
-        if dz <= gz:
+        if dz <= 0:
             continue
-        for z in range(gz, dz):
+        for z in range(1, dz):
             for ddx, ddy in _plus_offsets:
                 px, py = sx - 1 + ddx, sy - 1 + ddy
                 if 0 <= px < width and 0 <= py < depth:
                     m.set(px, py, z, rng.choice(BOARDWALK_TONES))
 
-    # Rope bindings at some stilt-beam junctions
-    for sx, sy in stilt_positions[:4]:
-        if rng.random() < 0.5:
-            dz = _deck_z_at_lx(sx)
-            for ddx in range(-2, 4):
-                for ddy in range(-2, 4):
-                    if (ddx in (-2, 3)) or (ddy in (-2, 3)):
-                        px, py = sx + ddx, sy + ddy
-                        if 0 <= px < width and 0 <= py < depth:
-                            m.set(px, py, dz, TORCH_ROPE)
-
     # --- Dense jungle undergrowth below the deck ---
     from generate_parts import _build_understory, _build_broad_leaf_plant, _build_giant_fern
 
-    # Ferns, understory plants growing up from the hillside
+    # Ferns, understory plants growing up from ground
     for _ in range(max(20, (width * depth) // 50)):
         ux = rng.randint(1, width - 2)
         uy = rng.randint(1, depth - 2)
-        wx, wy = _local_to_world(ux, uy)
-        gz = max(0, _hill_elevation(wx, wy) - base_elev)
         deck_z_here = _deck_z_at_lx(ux)
-        headroom = deck_z_here - gz
+        headroom = deck_z_here
         if headroom < 4:
             continue
         max_h = max(3, min(headroom - 2, 25))
@@ -1054,7 +1085,7 @@ def build_boardwalk_segment(row, south_z, north_z, rng):
         for (vx, vy, vz), c in under_m._v.items():
             px = ux + vx - 16
             py = uy + vy - 16
-            pz = gz + vz
+            pz = 1 + vz
             if 0 <= px < width and 0 <= py < depth and pz < deck_z_here - 2:
                 m.set(px, py, pz, c)
 
@@ -1063,13 +1094,11 @@ def build_boardwalk_segment(row, south_z, north_z, rng):
     for _ in range(max(40, (width * depth) // 20)):
         cx = rng.randint(1, width - 2)
         cy = rng.randint(1, depth - 2)
-        wx, wy = _local_to_world(cx, cy)
-        gz = max(0, _hill_elevation(wx, wy) - base_elev)
         deck_z_here = _deck_z_at_lx(cx)
-        if deck_z_here - gz < 3:
+        if deck_z_here < 3:
             continue
         r_val = rng.uniform(2.0, 5.0)
-        _leaf_cluster(m, cx, cy, gz + 1, r_val, floor_pal, rng,
+        _leaf_cluster(m, cx, cy, 1, r_val, floor_pal, rng,
                      max_x=width - 1, max_y=depth - 1, max_z=deck_z_here - 2)
 
     # Hanging vines from underside of deck — biased toward edges (more sun)
@@ -1081,9 +1110,7 @@ def build_boardwalk_segment(row, south_z, north_z, rng):
         else:
             vy = rng.randint(0, depth - 1)
         deck_z_here = _deck_z_at_lx(vx)
-        wx, wy = _local_to_world(vx, vy)
-        gz = max(0, _hill_elevation(wx, wy) - base_elev)
-        headroom = deck_z_here - gz
+        headroom = deck_z_here
         vine_len = rng.randint(max(5, headroom // 3), max(6, headroom * 2 // 3))
         for dz in range(vine_len):
             vz = deck_z_here - 2 - dz
@@ -1101,17 +1128,14 @@ def build_boardwalk_segment(row, south_z, north_z, rng):
 
     # Spiral vines wrapping around ALL stilt posts
     for sx, sy in stilt_positions:
-        wx, wy = _local_to_world(min(sx, width - 1), min(sy, depth - 1))
-        gz = max(0, _hill_elevation(wx, wy) - base_elev)
         dz_top = _deck_z_at_lx(sx)
-        stilt_h = dz_top - gz
-        if stilt_h < 6:
+        if dz_top < 6:
             continue
 
         # Spiral vine — angle_step varies per z for irregular spacing
         base_step = rng.uniform(0.3, 0.8)
         angle = rng.uniform(0, 2 * math.pi)
-        for z in range(gz, dz_top):
+        for z in range(1, dz_top):
             angle_step = base_step + rng.uniform(-0.2, 0.2)
             vx_off = int(round(2.0 * math.cos(angle)))
             vy_off = int(round(2.0 * math.sin(angle)))
@@ -1129,8 +1153,8 @@ def build_boardwalk_segment(row, south_z, north_z, rng):
             angle += angle_step
 
         # Moss covering lower portion of post
-        moss_top = min(gz + rng.randint(8, 18), dz_top)
-        for z in range(gz, moss_top):
+        moss_top = min(1 + rng.randint(8, 18), dz_top)
+        for z in range(1, moss_top):
             for ddx in range(-1, 3):
                 for ddy in range(-1, 3):
                     if rng.random() < 0.35:
@@ -1138,10 +1162,23 @@ def build_boardwalk_segment(row, south_z, north_z, rng):
                         if 0 <= px < width and 0 <= py < depth:
                             m.set(px, py, z, rng.choice(MOSS_TONES))
 
-    # Weather the planks
+    # Weather the planks (before splitting so both models benefit)
     _weather_planks(m, rng)
 
-    return m, base_elev
+    # Split into prism (>= south_z) and base (< south_z)
+    prism_model = VoxelModel()
+    base_model = VoxelModel()
+    for (lx, ly, lz), c in m._v.items():
+        pz = lz - south_z_local
+        if pz >= 0:
+            prism_model.set(lx, ly, pz, c)
+        else:
+            base_model.set(lx, ly, lz, c)
+
+    # Force prism model size to advance × depth × rise
+    prism_model.set_size(width, depth, rise)
+
+    return prism_model, base_model
 
 
 def build_platform_model(rng, grid):
@@ -1226,9 +1263,9 @@ def build_platform_model(rng, grid):
     # Ouroboros inscription on the deck surface — burned/carved into the wood
     import os
     from PIL import Image as PILImage
-    ouroboros_path = os.path.join(os.path.dirname(__file__), 'ouroboros.jpg')
+    ouroboros_path = os.path.join(os.path.dirname(__file__), 'ouroboros.png')
     if os.path.exists(ouroboros_path):
-        ouro_img = PILImage.open(ouroboros_path).convert('L')
+        ouro_img = PILImage.open(ouroboros_path)
         # Crop to square
         ouro_w, ouro_h = ouro_img.size
         crop_side = min(ouro_w, ouro_h)
@@ -1240,19 +1277,32 @@ def build_platform_model(rng, grid):
         # Resize ~10% larger than before
         ouro_size = min(width, depth) - 6
         ouro_img = ouro_img.resize((ouro_size, ouro_size), PILImage.NEAREST)
-        # Center on platform, shifted left 20 voxels (from player perspective = +y)
+        # Center on platform, shifted right 15 voxels (from player facing screen)
         ox_off = (width - ouro_size) // 2
-        oy_off = (depth - ouro_size) // 2 + 14
-        # Subtle stain tones — just slightly darker than boardwalk
-        BRAND_TONES = STAIN_TONES
+        oy_off = (depth - ouro_size) // 2 + 14 - 15 + 13
+        # Dynamic grey-to-brown mapping using palette indices
+        # Dark pixels → deep burn, mid pixels → bark, light pixels → warm wood
+        brown_ramp = [
+            134,   # 0-19: deepest burn — STAIN_3 (18,12,7)
+            133,   # 20-39: dark stain — STAIN_2 (25,18,10)
+            132,   # 40-59: stain — STAIN_1 (35,24,14)
+            31,    # 60-79: dark bark — BARK_DARK_1 (50,30,15)
+            45,    # 80-99: root — ROOT_1 (60,38,20)
+            36,    # 100-119: bark mid — BARK_MID_3 (70,48,26)
+            38,    # 120-149: trunk — TRUNK_2 (85,58,32)
+            44,    # 150-179: boardwalk dark — BOARDWALK_5 (95,70,42)
+            42,    # 180-209: boardwalk mid — BOARDWALK_3 (100,75,45)
+            40,    # 210-255: boardwalk light — BOARDWALK_1 (120,90,55)
+        ]
         for px in range(ouro_size):
             for py in range(ouro_size):
                 brightness = ouro_img.getpixel((px, py))
-                if brightness < 120:
+                if brightness < 210:
                     lx = ox_off + px
                     ly = oy_off + py
                     if 0 <= lx < width and 0 <= ly < depth:
-                        m.set(lx, ly, deck_z_local, rng.choice(BRAND_TONES))
+                        idx = min(len(brown_ramp) - 1, brightness // 20)
+                        m.set(lx, ly, deck_z_local, brown_ramp[idx])
 
     # Rope bindings at stilt-beam junctions
     for sx, sy in stilt_positions:
@@ -1380,7 +1430,7 @@ def build_arcade_on_platform(rng):
     min_x = min(c[0] for c in coords)
     min_y = min(c[1] for c in coords)
     m.shift(-min_x, -min_y, 0)
-    return m, PLATFORM_DECK_Z + 4
+    return m, PLATFORM_DECK_Z + 1
 
 
 # ============================================================
@@ -2071,6 +2121,7 @@ def generate_scene(output_dir):
                 all_tree_info.append({
                     'wx': tx, 'wy': ty, 'h': h, 'gz': gz,
                     'is_hero': is_hero, 'is_inner': d >= len(_HEIGHT_TABLE),
+                    'ring': d,
                     'canopy': canopy_world,
                 })
 
@@ -2311,15 +2362,44 @@ def generate_scene(output_dir):
     print(f"  Placing torches ({len(all_tree_info)} trees tracked)...")
     torch_rng = random.Random(rng.randint(0, 2**31))
 
-    # Build spatial index: tree by trunk position
-    tree_by_pos = {}
+    def _write_voxel_clipped(wx, wy, wz, color, min_ring):
+        """Write voxel only if it doesn't extend into a ring lower than min_ring."""
+        if _wv_ring(wx, wy) < min_ring:
+            return False
+        return _write_voxel(wx, wy, wz, color)
+
+    def _pick_torch_spots(canopy, trunk_wx, trunk_wy, count, min_spacing=8):
+        """Pick canopy positions at exposed branch tips — top 25% by height,
+        furthest from trunk, with minimum spacing between spots."""
+        if not canopy:
+            return []
+        # Filter to top 25% by height
+        sorted_by_z = sorted(canopy, key=lambda p: p[2], reverse=True)
+        top_quarter = sorted_by_z[:max(10, len(sorted_by_z) // 4)]
+        # Sort by XY distance from trunk (furthest = most exposed)
+        top_quarter.sort(key=lambda p: (p[0]-trunk_wx)**2 + (p[1]-trunk_wy)**2, reverse=True)
+        # Greedily select with minimum spacing
+        selected = []
+        min_sq = min_spacing * min_spacing
+        for (cx, cy, cz) in top_quarter:
+            too_close = False
+            for (sx, sy, sz) in selected:
+                if (cx-sx)**2 + (cy-sy)**2 + (cz-sz)**2 < min_sq:
+                    too_close = True
+                    break
+            if not too_close:
+                selected.append((cx, cy, cz))
+            if len(selected) >= count * 3:
+                break
+        return selected
+
     inner_heroes = []
-    non_inner_trees = []
+    poisson_candidates = []
     for ti in all_tree_info:
         if ti['is_inner'] and ti['is_hero']:
             inner_heroes.append(ti)
-        elif not ti['is_inner']:
-            non_inner_trees.append(ti)
+        else:
+            poisson_candidates.append(ti)
 
     # Poisson disk sample points, find nearest tree for each
     TORCH_MIN_DIST = 96
@@ -2328,10 +2408,21 @@ def generate_scene(output_dir):
 
     # For each point, find the closest non-inner tree with canopy
     torch_count = 0
+    non_hero_torch_count = 0
+    placed_torches = []  # (x, y, z) of all placed torches for spacing check
+    TORCH_SPACING = 8
+    TORCH_SPACING_SQ = TORCH_SPACING * TORCH_SPACING
+
+    def _too_close(x, y, z):
+        for (px, py, pz) in placed_torches:
+            if (x-px)**2 + (y-py)**2 + (z-pz)**2 < TORCH_SPACING_SQ:
+                return True
+        return False
+
     for (px, py) in torch_points:
         best_tree = None
         best_dist = float('inf')
-        for ti in non_inner_trees:
+        for ti in poisson_candidates:
             if not ti['canopy'] or ti['h'] < 30:
                 continue
             dist = (ti['wx'] - px) ** 2 + (ti['wy'] - py) ** 2
@@ -2341,93 +2432,98 @@ def generate_scene(output_dir):
         if best_tree is None or best_dist > (TORCH_MIN_DIST * 0.7) ** 2:
             continue
         canopy = best_tree['canopy']
+        tree_ring = best_tree['ring']
         num_torches = torch_rng.randint(10, 12)
-        sorted_c = sorted(canopy, key=lambda p: p[2], reverse=True)
-        top_canopy = sorted_c[:max(10, len(sorted_c) // 4)]
+        top_canopy = _pick_torch_spots(canopy, best_tree['wx'], best_tree['wy'], num_torches)
         for _ in range(num_torches):
             if not top_canopy:
                 break
             twx, twy, twz = torch_rng.choice(top_canopy)
             twx += torch_rng.randint(-2, 2)
             twy += torch_rng.randint(-2, 2)
-            if twz <= 15:
+            if twz <= 15 or _too_close(twx, twy, twz):
                 continue
             rope_len = torch_rng.randint(3, 6)
             hang_z = twz - rope_len
             for z in range(twz, hang_z, -1):
-                _write_voxel(twx, twy, z, TORCH_ROPE)
+                _write_voxel_clipped(twx, twy, z, TORCH_ROPE, tree_ring)
             pole_h = torch_rng.randint(4, 6)
             pole_top = hang_z
             pole_bot = pole_top - pole_h
             for z in range(pole_bot, pole_top):
                 if z > 0:
-                    _write_voxel(twx, twy, z, torch_rng.choice([BAMBOO_MID_1, BAMBOO_DARK]))
+                    _write_voxel_clipped(twx, twy, z, torch_rng.choice([BAMBOO_MID_1, BAMBOO_DARK]), tree_ring)
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
                     if dx != 0 or dy != 0:
-                        _write_voxel(twx + dx, twy + dy, pole_top, TORCH_ROPE)
+                        _write_voxel_clipped(twx + dx, twy + dy, pole_top, TORCH_ROPE, tree_ring)
             bowl_z = pole_bot - 1
             if bowl_z > 0:
                 for dx in range(-1, 2):
                     for dy in range(-1, 2):
                         edge = (dx in (-1, 1)) or (dy in (-1, 1))
                         if edge:
-                            _write_voxel(twx + dx, twy + dy, bowl_z, BAMBOO_DARK)
+                            _write_voxel_clipped(twx + dx, twy + dy, bowl_z, BAMBOO_DARK, tree_ring)
                         else:
-                            _write_voxel(twx + dx, twy + dy, bowl_z,
-                                        torch_rng.choice([TORCH_FLAME_1, TORCH_FLAME_2]))
+                            _write_voxel_clipped(twx + dx, twy + dy, bowl_z,
+                                        torch_rng.choice([TORCH_FLAME_1, TORCH_FLAME_2]), tree_ring)
                 for dz in range(1, 3):
-                    _write_voxel(twx, twy, bowl_z + dz,
-                                torch_rng.choice([TORCH_FLAME_1, TORCH_FLAME_2]))
+                    _write_voxel_clipped(twx, twy, bowl_z + dz,
+                                torch_rng.choice([TORCH_FLAME_1, TORCH_FLAME_2]), tree_ring)
+            placed_torches.append((twx, twy, twz))
             torch_count += 1
+            non_hero_torch_count += 1
 
     # Inner heroes: all get torches (30-35 each)
     for ti in inner_heroes:
         canopy = ti['canopy']
         if not canopy:
             continue
+        tree_ring = ti['ring']
         num_torches = torch_rng.randint(30, 35)
-        sorted_c = sorted(canopy, key=lambda p: p[2], reverse=True)
-        top_canopy = sorted_c[:max(20, len(sorted_c) // 3)]
+        top_canopy = _pick_torch_spots(canopy, ti['wx'], ti['wy'], num_torches)
         for _ in range(num_torches):
             if not top_canopy:
                 break
             twx, twy, twz = torch_rng.choice(top_canopy)
             twx += torch_rng.randint(-2, 2)
             twy += torch_rng.randint(-2, 2)
-            if twz <= 15:
+            if twz <= 15 or _too_close(twx, twy, twz):
                 continue
             rope_len = torch_rng.randint(3, 6)
             hang_z = twz - rope_len
             for z in range(twz, hang_z, -1):
-                _write_voxel(twx, twy, z, TORCH_ROPE)
+                _write_voxel_clipped(twx, twy, z, TORCH_ROPE, tree_ring)
             pole_h = torch_rng.randint(4, 6)
             pole_top = hang_z
             pole_bot = pole_top - pole_h
             for z in range(pole_bot, pole_top):
                 if z > 0:
-                    _write_voxel(twx, twy, z, torch_rng.choice([BAMBOO_MID_1, BAMBOO_DARK]))
+                    _write_voxel_clipped(twx, twy, z, torch_rng.choice([BAMBOO_MID_1, BAMBOO_DARK]), tree_ring)
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
                     if dx != 0 or dy != 0:
-                        _write_voxel(twx + dx, twy + dy, pole_top, TORCH_ROPE)
+                        _write_voxel_clipped(twx + dx, twy + dy, pole_top, TORCH_ROPE, tree_ring)
             bowl_z = pole_bot - 1
             if bowl_z > 0:
                 for dx in range(-1, 2):
                     for dy in range(-1, 2):
                         edge = (dx in (-1, 1)) or (dy in (-1, 1))
                         if edge:
-                            _write_voxel(twx + dx, twy + dy, bowl_z, BAMBOO_DARK)
+                            _write_voxel_clipped(twx + dx, twy + dy, bowl_z, BAMBOO_DARK, tree_ring)
                         else:
-                            _write_voxel(twx + dx, twy + dy, bowl_z,
-                                        torch_rng.choice([TORCH_FLAME_1, TORCH_FLAME_2]))
+                            _write_voxel_clipped(twx + dx, twy + dy, bowl_z,
+                                        torch_rng.choice([TORCH_FLAME_1, TORCH_FLAME_2]), tree_ring)
                 for dz in range(1, 3):
-                    _write_voxel(twx, twy, bowl_z + dz,
-                                torch_rng.choice([TORCH_FLAME_1, TORCH_FLAME_2]))
+                    _write_voxel_clipped(twx, twy, bowl_z + dz,
+                                torch_rng.choice([TORCH_FLAME_1, TORCH_FLAME_2]), tree_ring)
+            placed_torches.append((twx, twy, twz))
             torch_count += 1
 
-    print(f"    Placed {torch_count} torches ({len(inner_heroes)} heroes, "
-          f"{len(torch_points)} Poisson points)")
+    hero_torch_count = torch_count - non_hero_torch_count
+    print(f"    Placed {torch_count} torches: {non_hero_torch_count} on non-heroes, "
+          f"{hero_torch_count} on {len(inner_heroes)} heroes, "
+          f"{len(torch_points)} Poisson points")
 
     # ---- Dirt path from boardwalk to edge ----
     path_tiles = [(r, c) for (r, c), t in grid.items() if t == 'path']
@@ -2465,7 +2561,7 @@ def generate_scene(output_dir):
             for lx in range(TILE_SIZE):
                 for ly in range(TILE_SIZE):
                     wx, wy = twx + lx, twy + ly
-                    elev = _hill_elevation(wx, wy)
+                    elev = 0  # single-layer flat ground under boardwalk path
                     mlx = wx - base_wx
                     mly = wy - base_wy
 
@@ -2509,12 +2605,11 @@ def generate_scene(output_dir):
                 sx = twx + stone_rng.randint(4, TILE_SIZE - 5)
                 sy = twy + stone_rng.randint(4, TILE_SIZE - 5)
                 sr = stone_rng.randint(1, 2)
-                gz = _hill_elevation(sx, sy)
                 for ddx in range(-sr, sr + 1):
                     for ddy in range(-sr, sr + 1):
                         if ddx * ddx + ddy * ddy <= sr * sr:
                             px, py = sx + ddx, sy + ddy
-                            path_m.set(px - base_wx, py - base_wy, gz,
+                            path_m.set(px - base_wx, py - base_wy, 0,
                                       stone_rng.choice([STONE_MID, STONE_DARK]))
 
         # Scatter twigs across path
@@ -2528,14 +2623,13 @@ def generate_scene(output_dir):
                 angle = twig_rng.uniform(0, math.pi)
                 tlen = twig_rng.randint(2, 5)
                 col = twig_rng.choice(twig_tones)
-                gz = _hill_elevation(tx, ty)
                 ddx = math.cos(angle)
                 ddy = math.sin(angle)
                 for step in range(-tlen // 2, tlen // 2 + 1):
                     px = int(round(tx + ddx * step))
                     py = int(round(ty + ddy * step))
                     if 0 <= px - base_wx < 256 and 0 <= py - base_wy < 256:
-                        path_m.set(px - base_wx, py - base_wy, gz, col)
+                        path_m.set(px - base_wx, py - base_wy, 0, col)
 
         if path_m._v:
             add_multimodel_structure("path", [(path_m, mr_end, mc_end, 0)])
@@ -2573,18 +2667,35 @@ def generate_scene(output_dir):
                     add_multimodel_structure(f"forest_{struct_idx}", model_list)
                     struct_idx += 1
 
-    # ---- 2. Boardwalk structures (one per row, 2 tiles wide) ----
+    # ---- 2. Boardwalk structures (consolidated prism groups) ----
     print("\nBuilding boardwalk structures...")
     bw_boundaries = compute_boardwalk_boundaries(random.Random(rng.randint(0, 2**31)))
-    for i, row in enumerate(range(BOARDWALK_ROW_START, BOARDWALK_ROW_END - 1, -1)):
-        # i=0 → row 31 (south entry), i=13 → row 18 (platform adjacent)
-        south_z = bw_boundaries[i]
-        north_z = bw_boundaries[i + 1]
+    rows = list(range(BOARDWALK_ROW_START, BOARDWALK_ROW_END - 1, -1))
+    n_segments = len(rows)
+
+    # Consolidate: max 8 tiles per group (8*32=256 MagicaVoxel limit)
+    max_per_group = 8
+    groups = []
+    for g_start in range(0, n_segments, max_per_group):
+        g_end = min(g_start + max_per_group, n_segments)
+        groups.append((g_start, g_end))
+
+    for g_idx, (g_start, g_end) in enumerate(groups):
+        n_tiles = g_end - g_start
+        group_south_z = bw_boundaries[g_start]
+        group_north_z = bw_boundaries[g_end]
+        south_row = rows[g_start]  # southernmost row of group
+
         bw_rng = random.Random(rng.randint(0, 2**31))
-        bw_model, bw_base = build_boardwalk_segment(row, south_z, north_z, bw_rng)
-        # Model covers tiles (row, 15)-(row, 16); mr_end=row, mc_end=16
-        model_list = [(bw_model, row, BOARDWALK_COLS[1], bw_base)]
-        add_multimodel_structure(f"boardwalk_{i}", model_list)
+        prism_model, base_model = build_boardwalk_segment(
+            south_row, group_south_z, group_north_z, bw_rng, n_tiles=n_tiles,
+            include_transition_step=(g_idx > 0))
+
+        add_multimodel_structure(f"boardwalk_g{g_idx}_MinusZPrism",
+                                 [(prism_model, south_row, BOARDWALK_COLS[1], group_south_z)])
+        if base_model._v:
+            add_multimodel_structure(f"boardwalk_g{g_idx}_base",
+                                     [(base_model, south_row, BOARDWALK_COLS[1], 0)])
 
     # ---- 3. Platform structure (4x4 tiles) ----
     print("\nBuilding platform structure...")

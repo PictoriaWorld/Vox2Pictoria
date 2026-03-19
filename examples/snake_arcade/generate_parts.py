@@ -140,6 +140,7 @@ class VoxelModel:
     def __init__(self):
         self._v = {}
         self._materials = {}
+        self._explicit_size = None
 
     def set(self, x, y, z, color):
         self._v[(x, y, z)] = color
@@ -162,7 +163,12 @@ class VoxelModel:
     def to_list(self):
         return [(x, y, z, c) for (x, y, z), c in self._v.items()]
 
+    def set_size(self, sx, sy, sz):
+        self._explicit_size = (sx, sy, sz)
+
     def get_size(self):
+        if self._explicit_size is not None:
+            return self._explicit_size
         if not self._v:
             return (1, 1, 1)
         coords = list(self._v.keys())
