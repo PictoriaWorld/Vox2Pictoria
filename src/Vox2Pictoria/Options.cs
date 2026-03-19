@@ -7,6 +7,7 @@ public class Options
     public string VoxRelativePath { get; }
     public List<(string voxRelativePath, int centerX, int centerY)> CombineInputs { get; }
     public bool NoRender { get; }
+    public bool NoValidation { get; }
     public bool SceneTestRun { get; }
     public bool FullSamples { get; }
     public bool FullResolution { get; }
@@ -35,6 +36,7 @@ public class Options
         string? tempVoxRelativePath = null;
         var tempCombineInputs = new List<(string voxRelativePath, int centerX, int centerY)>();
         bool tempNoRender = false;
+        bool tempNoValidation = false;
         bool tempSceneTestRun = false;
         bool tempFullSamples = false;
         bool tempFullResolution = false;
@@ -62,6 +64,9 @@ public class Options
                     break;
                 case "--no-render":
                     tempNoRender = true;
+                    break;
+                case "--no-validation":
+                    tempNoValidation = true;
                     break;
                 case "--scene-test-run":
                     tempSceneTestRun = true;
@@ -133,6 +138,7 @@ public class Options
         VoxRelativePath = tempVoxRelativePath ?? "";
         CombineInputs = tempCombineInputs;
         NoRender = tempNoRender;
+        NoValidation = tempNoValidation;
         SceneTestRun = tempSceneTestRun;
         FullSamples = tempFullSamples;
         FullResolution = tempFullResolution;
@@ -168,6 +174,7 @@ public class Options
             Options:
               --combine "vox-path-1 cx cy" "vox-path-2 cx cy" ...               Combine multiple .vox files into one scene. Each argument is a quoted string with the .vox path and its MagicaVoxel X/Y center position. All .vox files must share the same palette. This option exists to work around MagicaVoxel's project dimensions limit. When specified, this option takes precedence over vox-path.
               --no-render                                                       Regenerate structure_infos.json, .pstr, and .ppty files only. Useful when re-rendering is not needed (e.g. .pstr, .ppty, or .json files lost/corrupted but rendered images must already exist on disk). (default: off)
+              --no-validation                                                     Skip structure intersection, property bounds, and height limit validation. (default: off)
               --scene-test-run                                                  When specified, only a single 2D image of the full scene is rendered. Useful for previewing. (default: off)
               --full-samples                                                    When specified, renders images at maximum quality (2048 Blender Cycles samples). When not specified, 32 samples are used (faster, useful for previewing). (default: off)
               --full-resolution                                                 When specified, renders a larger image for higher quality after resizing. When not specified, renders a smaller image (faster, useful for previewing). (default: off)

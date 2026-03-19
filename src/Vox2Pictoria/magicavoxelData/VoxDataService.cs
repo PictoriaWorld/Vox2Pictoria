@@ -5,11 +5,33 @@ namespace Vox2Pictoria;
 
 public class VoxDataService
 {
+    private static readonly int[] HeightLimits = ComputeHeightLimits();
+
+    private static int[] ComputeHeightLimits()
+    {
+        var limits = new int[15];
+        limits[0] = 1;
+        double sqrt2048 = Math.Sqrt(2048);
+        double sqrt3 = Math.Sqrt(3);
+        for (int i = 1; i < limits.Length; i++)
+        {
+            limits[i] = Math.Min(Constants.ChunkCartesianHeight, (int)Math.Floor((i + 1) * sqrt2048 / sqrt3));
+        }
+        return limits;
+    }
+
+    public static (int tileXLength, int tileZLength) ComputeTileLengths(int maxPictoriaX, int maxPictoriaZ)
+    {
+        int tileXLength = (int)Math.Ceiling(2 * maxPictoriaX / (double)Constants.TileCartesianWidth);
+        int tileZLength = (int)Math.Ceiling(2 * maxPictoriaZ / (double)Constants.TileCartesianWidth);
+        return (tileXLength, tileZLength);
+    }
+
     // Resources:
     //
     // - https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox-extension.txt
     // - https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt
-    public static Dictionary<string, StructureInfo> ExtractStructureDataFromVox(VoxModel model)
+    public static Dictionary<string, StructureInfo> ExtractStructureDataFromVox(VoxModel model, bool noValidation = false)
     {
         // Get frame infos
         //
@@ -38,13 +60,16 @@ public class VoxDataService
         Dictionary<string, StructureInfo> structureNameStructureInfoMap = CreateStructureInfos(transformNodeChunkIDShapeInfoMap);
 
         // Validate no intersecting bounding boxes
-        ValidateNoIntersectingBoundingBoxes(structureNameStructureInfoMap);
+        if (!noValidation) ValidateNoIntersectingBoundingBoxes(structureNameStructureInfoMap);
 
         // Set structure image dimensions
         SetStructureImageDimensions(structureNameStructureInfoMap);
 
         // Set Pictoria locations
         SetPictoriaLocations(structureNameStructureInfoMap);
+
+        // Validate property bounds and height limits
+        if (!noValidation) ValidatePropertyBoundsAndHeightLimits(structureNameStructureInfoMap);
 
         return structureNameStructureInfoMap;
     }
@@ -74,6 +99,84 @@ public class VoxDataService
         if (xLength % 2 != 0 || zLength % 2 != 0)
         {
             throw new InvalidOperationException($"Both xLength and zLength must be even. Current lengths are xLength: {xLength}, zLength: {zLength}.");
+        }
+    }
+
+    static void ValidatePropertyBoundsAndHeightLimits(Dictionary<string, StructureInfo> structureNameStructureInfoMap)
+    {
+        // Compute scene bounds
+        int maxPictoriaX = int.MinValue;
+        int maxPictoriaZ = int.MinValue;
+        foreach (StructureInfo structureInfo in structureNameStructureInfoMap.Values)
+        {
+            Cuboid location = structureInfo.ShapeInfo.PictoriaLocation;
+            maxPictoriaX = Math.Max(maxPictoriaX, location.MaxX);
+            maxPictoriaZ = Math.Max(maxPictoriaZ, location.MaxZ);
+        }
+
+        // Compute tile dimensions and property rect
+        (int tileXLength, int tileZLength) = ComputeTileLengths(maxPictoriaX, maxPictoriaZ);
+        int propertyHalfX = tileXLength * Constants.TileCartesianWidth / 2;
+        int propertyHalfZ = tileZLength * Constants.TileCartesianWidth / 2;
+
+        var violations = new List<string>();
+
+        foreach ((string structureName, StructureInfo structureInfo) in structureNameStructureInfoMap)
+        {
+            Cuboid location = structureInfo.ShapeInfo.PictoriaLocation;
+
+            // Check below ground
+            if (location.MinY < 0)
+            {
+                violations.Add($"  '{structureName}': extends below ground (minY = {location.MinY})");
+            }
+
+            // Check absolute height limit
+            if (location.MaxY > Constants.ChunkCartesianHeight)
+            {
+                violations.Add($"  '{structureName}': exceeds max height {Constants.ChunkCartesianHeight} (maxY = {location.MaxY})");
+            }
+
+            // Find required inset from height limit table
+            int maxY = location.MaxY;
+            int insetIndex = -1;
+            for (int i = 0; i < HeightLimits.Length; i++)
+            {
+                if (maxY <= HeightLimits[i])
+                {
+                    insetIndex = i;
+                    break;
+                }
+            }
+
+            if (insetIndex == -1)
+            {
+                // Height exceeds all entries — already caught by ChunkCartesianHeight check above
+                continue;
+            }
+
+            int inset = insetIndex * Constants.TileCartesianWidth;
+            int allowedMinX = -propertyHalfX + inset;
+            int allowedMaxX = propertyHalfX - inset;
+            int allowedMinZ = -propertyHalfZ + inset;
+            int allowedMaxZ = propertyHalfZ - inset;
+
+            if (location.MinX < allowedMinX || location.MaxX > allowedMaxX ||
+                location.MinZ < allowedMinZ || location.MaxZ > allowedMaxZ)
+            {
+                violations.Add(
+                    $"  '{structureName}': height {maxY} requires inset {inset} (height limit index {insetIndex}), " +
+                    $"allowed XZ bounds [{allowedMinX}, {allowedMaxX}] x [{allowedMinZ}, {allowedMaxZ}], " +
+                    $"but structure XZ bounds [{location.MinX}, {location.MaxX}) x [{location.MinZ}, {location.MaxZ})");
+            }
+        }
+
+        if (violations.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Property bounds / height limit violations detected (property: {tileXLength}x{tileZLength} tiles, " +
+                $"rect [{-propertyHalfX}, {propertyHalfX}] x [{-propertyHalfZ}, {propertyHalfZ}]):\n" +
+                string.Join("\n", violations));
         }
     }
 

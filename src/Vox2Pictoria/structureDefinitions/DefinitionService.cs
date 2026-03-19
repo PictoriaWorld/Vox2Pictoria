@@ -50,8 +50,7 @@ public class DefinitionService
         }
 
         // Compute tile lengths (a tile = 32 cartesian units, scene centered at origin)
-        int tileXLength = (int)Math.Ceiling(2 * maxPictoriaX / 32.0);
-        int tileZLength = (int)Math.Ceiling(2 * maxPictoriaZ / 32.0);
+        (int tileXLength, int tileZLength) = VoxDataService.ComputeTileLengths(maxPictoriaX, maxPictoriaZ);
 
         // Create PropertyDetails
         var propertyDetails = new PropertyDetails(1, propertyName, tileXLength, tileZLength);
