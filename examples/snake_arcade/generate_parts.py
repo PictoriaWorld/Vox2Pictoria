@@ -444,13 +444,13 @@ def make_palette() -> list[tuple[int, int, int, int]]:
     pal[79] = (170, 175, 180, 255)  # marquee text — Nokia silver (emissive)
     pal[80] = (43, 56, 10, 255)     # snake body dark olive
     pal[81] = (43, 56, 10, 255)     # food dots dark olive
-    pal[82] = (167, 186, 80, 255)   # LCD background yellow-green
+    pal[82] = (30, 230, 5, 255)     # LCD background max saturated Nokia green
 
     # Tiki torch (83-86)
     pal[83] = (140, 120, 70, 255)   # bamboo pole
     pal[84] = (110, 85, 50, 255)    # rope binding
-    pal[85] = (255, 180, 50, 255)   # flame amber (emissive)
-    pal[86] = (255, 130, 30, 255)   # flame orange (emissive)
+    pal[85] = (255, 95, 15, 255)    # flame warm amber (emissive)
+    pal[86] = (255, 60, 8, 255)    # flame warm orange (emissive)
 
     # Stone/gray (87-92)
     pal[87] = (150, 145, 135, 255)  # light
@@ -539,7 +539,7 @@ def get_materials() -> dict[int, dict[str, str]]:
     mats[SCREEN_DARK] = _DEFAULT
     mats[SCREEN_PIXEL] = _DEFAULT
     # LCD background: yellow-green glow (the backlight)
-    mats[SCREEN_BG] = {"_type": "_emit", "_emit": "0.5", "_flux": "2"}
+    mats[SCREEN_BG] = {"_type": "_emit", "_emit": "0.8", "_flux": "2"}
     # Torch flame emissive
     mats[TORCH_FLAME_1] = {"_type": "_emit", "_emit": "0.8", "_flux": "3"}
     mats[TORCH_FLAME_2] = {"_type": "_emit", "_emit": "0.7", "_flux": "3"}

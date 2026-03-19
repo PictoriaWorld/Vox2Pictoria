@@ -1,47 +1,73 @@
 # Snake Arcade Rainforest
 
-A surrealist 32x32-tile property with a dense rainforest, rickety boardwalk,
-giant snake skull, and a gleaming Snake arcade machine.
+A procedurally generated rainforest scene with a Nokia 3310 Snake arcade machine on an elevated platform, reached by an inclined boardwalk winding up through dense jungle. Designed for rendering with Vox2Pictoria using Blender Cycles, with a moonlit night atmosphere and warm torch lighting.
+
+*Note: this example has only been tested on Windows. If you encounter issues on macOS/Linux, feel free to open an issue or submit a PR.*
 
 ## Prerequisites
 
 - Python 3.10+
 - No additional dependencies (uses only stdlib)
 
-## Generation
+## Quick start
 
-### Phase 1: Individual Parts (for preview in MagicaVoxel)
+All commands must be run from the `examples/snake_arcade/` directory.
 
-```bash
-cd examples/snake_arcade
-python generate_parts.py
+### 1. Generate scene
+
 ```
-
-Output: `generated/parts/` — open any `.vox` file in MagicaVoxel to preview.
-
-### Phase 2: Full Scene Assembly
-
-```bash
 python generate_scene.py
 ```
 
-Output: `generated/snake_arcade.vox`
+This generates `generated/snake_arcade.vox`.
 
-### Test Render
+You can open this file in MagicaVoxel to preview it.
 
-```bash
-dotnet run -- --input examples/snake_arcade/generated/snake_arcade.vox --scene-test-run
+### 2. Test Render
+
+Render the scene as a single, lower quality image to preview it:
+
+PowerShell:
+```pwsh
+Vox2Pictoria generated/snake_arcade.vox --scene-test-run --sun-energy 1.5 --sun-color 0.4 0.5 1.0 --ambient-light-strength 0.25 --ambient-light-color 0.4 0.5 1.0 --emission-camera-cap 5.0 --emission-bounce-multiplier 4.0 --tone-mapper AgX -o rendered
 ```
 
-Verify no bounding box overlap errors and height limits are respected.
-Check that the arcade is a separate structure in `bin/structure_infos.json`.
-
-### Full Render
-
+Bash:
 ```bash
-dotnet run -- --input examples/snake_arcade/generated/snake_arcade.vox \
-  --sun-angle 35 --sun-warmth 0.15 --ambient-color "0.08,0.12,0.06" \
-  --emission-camera-cap 3.5 --emission-bounce-multiplier 2.0
+Vox2Pictoria generated/snake_arcade.vox \
+  --scene-test-run \
+  --sun-energy 1.5 \
+  --sun-color 0.4 0.5 1.0 \
+  --ambient-light-strength 0.25 \
+  --ambient-light-color 0.4 0.5 1.0 \
+  --emission-camera-cap 5.0 \
+  --emission-bounce-multiplier 4.0 \
+  --tone-mapper AgX \
+  -o rendered
 ```
 
-Warm sun with green-tinted ambient for jungle atmosphere.
+Please find explanations for the command options in the [Vox2Pictoria documentation](../../README.md).
+
+### 3. Full Render
+
+Full render (this could take several hours, depending on your hardware):
+
+PowerShell:
+```pwsh
+Vox2Pictoria generated/snake_arcade.vox --full-samples --full-resolution --sun-energy 1.5 --sun-color 0.4 0.5 1.0 --ambient-light-strength 0.25 --ambient-light-color 0.4 0.5 1.0 --emission-camera-cap 5.0 --emission-bounce-multiplier 4.0 --tone-mapper AgX -o rendered
+```
+
+Bash:
+```bash
+Vox2Pictoria generated/snake_arcade.vox \
+  --full-samples \
+  --full-resolution \
+  --sun-energy 1.5 \
+  --sun-color 0.4 0.5 1.0 \
+  --ambient-light-strength 0.25 \
+  --ambient-light-color 0.4 0.5 1.0 \
+  --emission-camera-cap 5.0 \
+  --emission-bounce-multiplier 4.0 \
+  --tone-mapper AgX \
+  -o rendered
+```

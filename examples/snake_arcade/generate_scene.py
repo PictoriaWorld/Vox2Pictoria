@@ -2841,6 +2841,26 @@ def generate_scene(output_dir):
 
         print(f"    After merging: {len(clusters)} clusters")
 
+        # Resolve overlapping bboxes: subtract larger bbox from smaller cluster
+        bboxes = [_bbox(c) for c in clusters]
+        for i in range(len(clusters)):
+            for j in range(i + 1, len(clusters)):
+                bi, bj = bboxes[i], bboxes[j]
+                if not (bi[0] < bj[3] and bi[3] > bj[0] and
+                        bi[1] < bj[4] and bi[4] > bj[1] and
+                        bi[2] < bj[5] and bi[5] > bj[2]):
+                    continue
+                if _bbox_vol(bi) >= _bbox_vol(bj):
+                    large_bb, small_idx = bi, j
+                else:
+                    large_bb, small_idx = bj, i
+                clusters[small_idx] = [(x, y, z) for (x, y, z) in clusters[small_idx]
+                                       if not (large_bb[0] <= x < large_bb[3] and
+                                               large_bb[1] <= y < large_bb[4] and
+                                               large_bb[2] <= z < large_bb[5])]
+        clusters = [c for c in clusters if c]
+        print(f"    After overlap resolution: {len(clusters)} clusters")
+
         # Delete small clusters by bbox volume
         MIN_BBOX_VOL = 4096
         before = len(clusters)

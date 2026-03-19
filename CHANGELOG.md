@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.6.0] - 19-03-2026
+### Added
+- Structures are now checked for extending below ground and violating Pictoria's height limits.
+- `--no-validation` option to skip all structure validation (intersections, property bounds, and height limits).
+
 ## [1.5.1] - 14-03-2026
 ### Fixed
 - `.ppty` and `.pstr` files now include the normalized MD5 base64 hash for structure images (`imageNormalizedMd5Base64`). Previously this field was always empty, causing import validation to fail in Pictoria.

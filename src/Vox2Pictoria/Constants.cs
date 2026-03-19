@@ -8,4 +8,14 @@ public static class Constants
     /// blenderWorldUnit = pictoriaCartesianUnit / PictoriaCartesianToBlenderWorldDivisor
     /// </summary>
     public const float PictoriaCartesianToBlenderWorldDivisor = 10f;
+
+    /// <summary>
+    /// Width of a single tile in Pictoria cartesian units.
+    /// </summary>
+    public const int TileCartesianWidth = 32;
+
+    /// <summary>
+    /// Maximum allowed height for a chunk/property in Pictoria cartesian units.
+    /// </summary>
+    public const int ChunkCartesianHeight = 384;
 }
