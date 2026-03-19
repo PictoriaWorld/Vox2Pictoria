@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.6.1] - 19-03-2026
+### Fixed
+- `Unsupported volume type` errors.
+
 ## [1.6.0] - 19-03-2026
 ### Added
 - Structures are now checked for extending below ground and violating Pictoria's height limits.
