@@ -7,7 +7,8 @@ A procedurally generated rainforest scene with a Nokia 3310 Snake arcade machine
 ## Prerequisites
 
 - Python 3.10+
-- No additional dependencies (uses only stdlib)
+- [Pillow](https://pypi.org/project/Pillow/) (`pip install Pillow`) — used to rasterize the arcade marquee text
+- [Silkscreen](https://fonts.google.com/specimen/Silkscreen) font — download and install `Silkscreen-Regular.ttf`. On Windows, the script expects it at `~/AppData/Local/Microsoft/Windows/Fonts/Silkscreen-Regular.ttf` (the default location when installed for the current user).
 
 ## Quick start
 
