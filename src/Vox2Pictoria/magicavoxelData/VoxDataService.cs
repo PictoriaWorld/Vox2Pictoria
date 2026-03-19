@@ -428,7 +428,8 @@ public class VoxDataService
         VolumeType volumeType = VolumeType.Cuboid;
 
         if (!string.IsNullOrWhiteSpace(shapeInfo.ParentTransformNodeName) &&
-            Enum.TryParse(shapeInfo.ParentTransformNodeName.Split('_')[^1], true, out VolumeType parsedVolumeType))
+            Enum.TryParse(shapeInfo.ParentTransformNodeName.Split('_')[^1], true, out VolumeType parsedVolumeType) &&
+            Enum.IsDefined(parsedVolumeType))
         {
             volumeType = parsedVolumeType;
         }
