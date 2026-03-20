@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.6.2] - 20-03-2026
+### Fixed
+- Structures with numeric name suffixes (e.g. `overgrowth_4`) were assigned wrong volume types instead of defaulting to cuboid.
+
 ## [1.6.1] - 19-03-2026
 ### Fixed
 - `Unsupported volume type` errors.
