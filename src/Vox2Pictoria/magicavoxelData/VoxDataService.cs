@@ -427,8 +427,10 @@ public class VoxDataService
         string structureName = $"structure{structureIndex}";
         VolumeType volumeType = VolumeType.Cuboid;
 
-        if (!string.IsNullOrWhiteSpace(shapeInfo.ParentTransformNodeName) &&
-            Enum.TryParse(shapeInfo.ParentTransformNodeName.Split('_')[^1], true, out VolumeType parsedVolumeType) &&
+        string lastSegment = shapeInfo.ParentTransformNodeName.Split('_')[^1];
+        if (!string.IsNullOrWhiteSpace(lastSegment) &&
+            !char.IsDigit(lastSegment[0]) &&
+            Enum.TryParse(lastSegment, true, out VolumeType parsedVolumeType) &&
             Enum.IsDefined(parsedVolumeType))
         {
             volumeType = parsedVolumeType;
