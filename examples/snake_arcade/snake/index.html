@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=360, height=240, initial-scale=1.0">
+<title>Snake</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+        width: 360px;
+        height: 240px;
+        overflow: hidden;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: monospace;
+        user-select: none;
+    }
+
+    canvas {
+        display: block;
+        image-rendering: pixelated;
+        outline: none;
+        border-radius: 9px;
+    }
+</style>
+</head>
+<body>
+<canvas id="game" width="360" height="240"></canvas>
+<script>
+"use strict";
+
+// --- Constants ---
+var CANVAS_W = 360;
+var CANVAS_H = 240;
+
+// Nokia 3310 LCD palette — only 2 colors
+var LCD_BG = "rgba(154, 173, 98, 0.85)";    // yellow-green LCD, slightly transparent
+var LCD_FG = "#3A4229";                      // dark green-brown
+
+// Layout: LCD green fills entire canvas, thin dark border around play area
+var MARGIN = 12;
+var SCORE_H = 18;
+var BORDER = 2;
+var PLAY_X = MARGIN;
+var PLAY_Y = MARGIN + SCORE_H;
+var PLAY_W = CANVAS_W - MARGIN * 2;
+var PLAY_H = CANVAS_H - PLAY_Y - MARGIN;
+var CELL = 11;
+var COLS = Math.floor(PLAY_W / CELL);
+var ROWS = Math.floor(PLAY_H / CELL);
+// Center the grid within the play area
+var GRID_OFFSET_X = Math.floor((PLAY_W - COLS * CELL) / 2);
+var GRID_OFFSET_Y = Math.floor((PLAY_H - ROWS * CELL) / 2);
+
+// Timing
+var BASE_INTERVAL_MS = 130;
+var MIN_INTERVAL_MS = 60;
+var SPEED_STEP_MS = 3;
+
+// Directions: 0=up, 1=right, 2=down, 3=left
+var DIR_UP = 0;
+var DIR_RIGHT = 1;
+var DIR_DOWN = 2;
+var DIR_LEFT = 3;
+var DX = [0, 1, 0, -1];
+var DY = [-1, 0, 1, 0];
+
+// Cell drawing: rounded square with small gap
+var CELL_PAD = 1;
+var CELL_RADIUS = 2.5;
+
+// --- State ---
+var canvas = document.getElementById("game");
+var ctx = canvas.getContext("2d");
+
+var snake = [];
+var dir = DIR_RIGHT;
+var dirQueue = [];
+var food = { x: 0, y: 0 };
+var score = 0;
+var highScore = 0;
+var alive = false;
+var started = false;
+var lastTick = 0;
+
+// --- Grid helpers ---
+function cellOccupiedBySnake(x, y) {
+    for (var i = 0; i < snake.length; i++) {
+        if (snake[i].x === x && snake[i].y === y) return true;
+    }
+    return false;
+}
+
+function spawnFood() {
+    var attempts = 0;
+    do {
+        food.x = Math.floor(Math.random() * COLS);
+        food.y = Math.floor(Math.random() * ROWS);
+        attempts++;
+    } while (cellOccupiedBySnake(food.x, food.y) && attempts < 1000);
+}
+
+function resetGame() {
+    var startX = Math.floor(COLS / 2);
+    var startY = Math.floor(ROWS / 2);
+    snake = [
+        { x: startX, y: startY },
+        { x: startX - 1, y: startY },
+        { x: startX - 2, y: startY }
+    ];
+    dir = DIR_RIGHT;
+    dirQueue.length = 0;
+    score = 0;
+    alive = true;
+    started = true;
+    lastTick = performance.now();
+    spawnFood();
+}
+
+function currentInterval() {
+    var interval = BASE_INTERVAL_MS - score * SPEED_STEP_MS;
+    if (interval < MIN_INTERVAL_MS) return MIN_INTERVAL_MS;
+    return interval;
+}
+
+// --- Update ---
+function tick() {
+    // Consume next queued direction that isn't a reversal
+    while (dirQueue.length > 0) {
+        var candidate = dirQueue.shift();
+        // Reject reversals (opposite directions differ by exactly 2)
+        if ((candidate + 2) % 4 !== dir) {
+            dir = candidate;
+            break;
+        }
+    }
+
+    var head = snake[0];
+    var nx = head.x + DX[dir];
+    var ny = head.y + DY[dir];
+
+    // Wall collision
+    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) {
+        alive = false;
+        if (score > highScore) highScore = score;
+        return;
+    }
+
+    // Self collision (skip tail since it will move)
+    for (var i = 0; i < snake.length - 1; i++) {
+        if (snake[i].x === nx && snake[i].y === ny) {
+            alive = false;
+            if (score > highScore) highScore = score;
+            return;
+        }
+    }
+
+    snake.unshift({ x: nx, y: ny });
+
+    if (nx === food.x && ny === food.y) {
+        score++;
+        spawnFood();
+    } else {
+        snake.pop();
+    }
+}
+
+// --- Rendering ---
+function cellScreenX(cx) {
+    return PLAY_X + GRID_OFFSET_X + cx * CELL;
+}
+
+function cellScreenY(cy) {
+    return PLAY_Y + GRID_OFFSET_Y + cy * CELL;
+}
+
+function drawRoundedRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawSnakeCell(cx, cy) {
+    var x = cellScreenX(cx) + CELL_PAD;
+    var y = cellScreenY(cy) + CELL_PAD;
+    var s = CELL - CELL_PAD * 2;
+    drawRoundedRect(x, y, s, s, CELL_RADIUS);
+}
+
+// Food: cross/plus shape like the Nokia original
+function drawFood(cx, cy) {
+    var centerX = cellScreenX(cx) + CELL / 2;
+    var centerY = cellScreenY(cy) + CELL / 2;
+    var arm = 4;  // arm length from center
+    var t = 3;    // thickness
+
+    // Horizontal bar
+    ctx.fillRect(centerX - arm, centerY - t / 2, arm * 2, t);
+    // Vertical bar
+    ctx.fillRect(centerX - t / 2, centerY - arm, t, arm * 2);
+    // Center dot slightly larger
+    ctx.fillRect(centerX - t / 2 - 0.5, centerY - t / 2 - 0.5, t + 1, t + 1);
+}
+
+function render() {
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+    // Full LCD green background (slightly transparent)
+    ctx.fillStyle = LCD_BG;
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    // Score text above play area
+    ctx.fillStyle = LCD_FG;
+    ctx.font = "bold 14px monospace";
+    ctx.textBaseline = "top";
+    ctx.textAlign = "left";
+    ctx.fillText("SCORE: " + score, MARGIN, MARGIN - 1);
+
+    ctx.textAlign = "right";
+    ctx.fillText("HI: " + highScore, CANVAS_W - MARGIN, MARGIN - 1);
+    ctx.textAlign = "left";
+
+    // Thin dark border around play area
+    ctx.strokeStyle = LCD_FG;
+    ctx.lineWidth = BORDER;
+    ctx.strokeRect(PLAY_X, PLAY_Y, PLAY_W, PLAY_H);
+
+    if (!started) {
+        drawTitleScreen();
+        return;
+    }
+
+    ctx.fillStyle = LCD_FG;
+
+    // Food (always visible, no blinking)
+    drawFood(food.x, food.y);
+
+    // Snake — all segments uniform
+    for (var i = 0; i < snake.length; i++) {
+        drawSnakeCell(snake[i].x, snake[i].y);
+    }
+
+    if (!alive) {
+        drawGameOver();
+    }
+}
+
+function drawTitleScreen() {
+    ctx.fillStyle = LCD_FG;
+    ctx.font = "bold 22px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    var cx = PLAY_X + PLAY_W / 2;
+    var cy = PLAY_Y + PLAY_H / 2;
+
+    ctx.fillText("SNAKE", cx, cy - 22);
+
+    ctx.font = "11px monospace";
+    ctx.fillText("Press any key or tap to start", cx, cy + 10);
+
+    // Decorative snake
+    var decoStartX = Math.floor(COLS / 2) - 3;
+    var decoY = Math.floor(ROWS / 2) + 4;
+    for (var i = 0; i < 6; i++) {
+        drawSnakeCell(decoStartX + i, decoY);
+    }
+
+    ctx.textAlign = "left";
+}
+
+function drawGameOver() {
+    // Dim overlay on play area
+    ctx.fillStyle = "rgba(154, 173, 98, 0.82)";
+    ctx.fillRect(PLAY_X + 1, PLAY_Y + 1, PLAY_W - 2, PLAY_H - 2);
+
+    ctx.fillStyle = LCD_FG;
+    ctx.font = "bold 20px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    var cx = PLAY_X + PLAY_W / 2;
+    var cy = PLAY_Y + PLAY_H / 2;
+
+    ctx.fillText("GAME OVER", cx, cy - 16);
+
+    ctx.font = "12px monospace";
+    ctx.fillText("Score: " + score, cx, cy + 8);
+    ctx.fillText("Press any key or tap", cx, cy + 26);
+
+    ctx.textAlign = "left";
+}
+
+// --- Input ---
+function queueDirection(newDir) {
+    // Cap queue at 2 to avoid buffering too far ahead
+    if (dirQueue.length >= 2) return;
+    // Check against the effective latest direction (last queued, or current committed)
+    var lastDir = dirQueue.length > 0 ? dirQueue[dirQueue.length - 1] : dir;
+    // Reject same direction or reversal
+    if (newDir === lastDir || (newDir + 2) % 4 === lastDir) return;
+    dirQueue.push(newDir);
+}
+
+function onKeyDown(e) {
+    var key = e.key;
+
+    if (!started || !alive) {
+        resetGame();
+        e.preventDefault();
+        return;
+    }
+
+    if (!alive) return;
+
+    if (key === "ArrowUp" || key === "w" || key === "W") {
+        queueDirection(DIR_UP);
+        e.preventDefault();
+    } else if (key === "ArrowRight" || key === "d" || key === "D") {
+        queueDirection(DIR_RIGHT);
+        e.preventDefault();
+    } else if (key === "ArrowDown" || key === "s" || key === "S") {
+        queueDirection(DIR_DOWN);
+        e.preventDefault();
+    } else if (key === "ArrowLeft" || key === "a" || key === "A") {
+        queueDirection(DIR_LEFT);
+        e.preventDefault();
+    }
+}
+
+document.addEventListener("keydown", onKeyDown);
+
+// Touch/click support for iframe use
+canvas.addEventListener("click", function (e) {
+    if (!started || !alive) {
+        resetGame();
+        return;
+    }
+
+    if (snake.length === 0) return;
+    var rect = canvas.getBoundingClientRect();
+    var clickX = e.clientX - rect.left;
+    var clickY = e.clientY - rect.top;
+
+    var headScreenX = cellScreenX(snake[0].x) + CELL / 2;
+    var headScreenY = cellScreenY(snake[0].y) + CELL / 2;
+
+    var dx = clickX - headScreenX;
+    var dy = clickY - headScreenY;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 0) queueDirection(DIR_RIGHT);
+        else if (dx < 0) queueDirection(DIR_LEFT);
+    } else {
+        if (dy > 0) queueDirection(DIR_DOWN);
+        else if (dy < 0) queueDirection(DIR_UP);
+    }
+});
+
+// --- Game loop ---
+function loop(timestamp) {
+    if (started && alive) {
+        if (timestamp - lastTick >= currentInterval()) {
+            tick();
+            lastTick = timestamp;
+        }
+    }
+
+    render();
+    requestAnimationFrame(loop);
+}
+
+// Focus canvas for keyboard input in iframe
+window.addEventListener("load", function () {
+    canvas.setAttribute("tabindex", "0");
+    canvas.focus();
+});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

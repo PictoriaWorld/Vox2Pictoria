@@ -30,16 +30,16 @@ Render the scene as a single, lower quality image to preview it:
 
 PowerShell:
 ```pwsh
-Vox2Pictoria generated/snake_arcade.vox --scene-test-run --sun-energy 1.5 --sun-color 0.4 0.5 1.0 --ambient-light-strength 0.25 --ambient-light-color 0.4 0.5 1.0 --emission-camera-cap 5.0 --emission-bounce-multiplier 4.0 --tone-mapper AgX -o rendered
+Vox2Pictoria generated/snake_arcade.vox --scene-test-run --sun-energy 3.85 --sun-color 0.4 0.5 1.0 --ambient-light-strength 0.7 --ambient-light-color 0.4 0.5 1.0 --emission-camera-cap 5.0 --emission-bounce-multiplier 4.0 --tone-mapper AgX -o rendered
 ```
 
 Bash:
 ```bash
 Vox2Pictoria generated/snake_arcade.vox \
   --scene-test-run \
-  --sun-energy 1.5 \
+  --sun-energy 3.85 \
   --sun-color 0.4 0.5 1.0 \
-  --ambient-light-strength 0.25 \
+  --ambient-light-strength 0.7 \
   --ambient-light-color 0.4 0.5 1.0 \
   --emission-camera-cap 5.0 \
   --emission-bounce-multiplier 4.0 \
@@ -55,7 +55,7 @@ Full render (this could take several hours, depending on your hardware):
 
 PowerShell:
 ```pwsh
-Vox2Pictoria generated/snake_arcade.vox --full-samples --full-resolution --sun-energy 1.5 --sun-color 0.4 0.5 1.0 --ambient-light-strength 0.25 --ambient-light-color 0.4 0.5 1.0 --emission-camera-cap 5.0 --emission-bounce-multiplier 4.0 --tone-mapper AgX -o rendered
+Vox2Pictoria generated/snake_arcade.vox --full-samples --full-resolution --sun-energy 3.85 --sun-color 0.4 0.5 1.0 --ambient-light-strength 0.7 --ambient-light-color 0.4 0.5 1.0 --emission-camera-cap 5.0 --emission-bounce-multiplier 4.0 --tone-mapper AgX -o rendered
 ```
 
 Bash:
@@ -63,9 +63,9 @@ Bash:
 Vox2Pictoria generated/snake_arcade.vox \
   --full-samples \
   --full-resolution \
-  --sun-energy 1.5 \
+  --sun-energy 3.85 \
   --sun-color 0.4 0.5 1.0 \
-  --ambient-light-strength 0.25 \
+  --ambient-light-strength 0.7 \
   --ambient-light-color 0.4 0.5 1.0 \
   --emission-camera-cap 5.0 \
   --emission-bounce-multiplier 4.0 \
