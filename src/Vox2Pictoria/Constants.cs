@@ -18,4 +18,10 @@ public static class Constants
     /// Maximum allowed height for a chunk/property in Pictoria cartesian units.
     /// </summary>
     public const int ChunkCartesianHeight = 384;
+
+    /// <summary>
+    /// Maximum length of entity names (structures, properties, skins).
+    /// Must match Pictoria.Server SharedConstants.NAME_MAX_LENGTH.
+    /// </summary>
+    public const int NameMaxLength = 32;
 }

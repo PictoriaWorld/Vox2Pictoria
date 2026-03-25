@@ -425,6 +425,11 @@ public class VoxDataService
 
         // Determine structure name and volume type
         string structureName = $"structure{structureIndex}";
+
+        // Validate structure name (should always pass for auto-generated names, but guards against future regressions)
+        string? structureNameError = NameValidationService.Validate(structureName, "Structure");
+        if (structureNameError != null) throw new InvalidOperationException(structureNameError);
+
         VolumeType volumeType = VolumeType.Cuboid;
 
         string lastSegment = shapeInfo.ParentTransformNodeName.Split('_')[^1];

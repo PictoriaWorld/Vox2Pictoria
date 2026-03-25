@@ -39,6 +39,10 @@ public class DefinitionService
 
         string propertyName = Path.GetFileNameWithoutExtension(options.VoxAbsolutePath);
 
+        // Validate property name (derived from .vox filename)
+        string? propertyNameError = NameValidationService.Validate(propertyName, "Property");
+        if (propertyNameError != null) throw new InvalidOperationException(propertyNameError);
+
         // Compute scene bounds from structure Pictoria locations
         int maxPictoriaX = int.MinValue;
         int maxPictoriaZ = int.MinValue;
@@ -108,7 +112,7 @@ public class DefinitionService
         var structureDetails = new StructureDetails(1, name,
             (int)structureInfo.VolumeType,
             [structurePictoriaLocation.MinX, structurePictoriaLocation.MinY, structurePictoriaLocation.MinZ, structurePictoriaLocation.XLength, structurePictoriaLocation.YLength, structurePictoriaLocation.ZLength],
-            imageNormalizedMd5Base64, []);
+            imageNormalizedMd5Base64, null);
 
         // Serialize StructureDetails to JSON
         var structureDetailsJsonStream = new MemoryStream();
