@@ -19,9 +19,9 @@ All commands must be run from the `examples/space_station/` directory.
 python generate_scene.py
 ```
 
-This generates `generated/space_station.vox` and `generated/palette.png`.
+This generates `generated/spaceStation.vox` and `generated/palette.png`.
 
-You can open `space_station.vox` in MagicaVoxel to preview it.
+You can open `spaceStation.vox` in MagicaVoxel to preview it.
 
 ### 2. Test Render
 
@@ -29,13 +29,13 @@ Render the scene as a single, lower quality image to preview it:
 
 PowerShell:
 ```pwsh
-Vox2Pictoria generated/space_station.vox --scene-test-run --sun-energy 6 --sun-color 0.9 0.92 1.0 --ambient-light-strength 0 --ambient-light-color 0.85 0.88 1.0 --emission-camera-cap 100 --emission-bounce-multiplier 2.0 --tone-mapper AgX
+Vox2Pictoria generated/spaceStation.vox --scene-test-run --sun-energy 6 --sun-color 0.9 0.92 1.0 --ambient-light-strength 0 --ambient-light-color 0.85 0.88 1.0 --emission-camera-cap 100 --emission-bounce-multiplier 2.0 --tone-mapper AgX
 ```
 
 Bash:
 ```bash
 Vox2Pictoria \
-  generated/space_station.vox \
+  generated/spaceStation.vox \
   --scene-test-run \
   --sun-energy 6 \
   --sun-color 0.9 0.92 1.0 \
@@ -54,13 +54,13 @@ Full render (this could take several hours, depending on your hardware):
 
 PowerShell:
 ```pwsh
-Vox2Pictoria generated/space_station.vox --full-samples --full-resolution --sun-energy 6 --sun-color 0.9 0.92 1.0 --ambient-light-strength 0 --ambient-light-color 0.85 0.88 1.0 --emission-camera-cap 100 --emission-bounce-multiplier 2.0 --tone-mapper AgX
+Vox2Pictoria generated/spaceStation.vox --full-samples --full-resolution --sun-energy 6 --sun-color 0.9 0.92 1.0 --ambient-light-strength 0 --ambient-light-color 0.85 0.88 1.0 --emission-camera-cap 100 --emission-bounce-multiplier 2.0 --tone-mapper AgX
 ```
 
 Bash:
 ```bash
 Vox2Pictoria \
-  generated/space_station.vox \
+  generated/spaceStation.vox \
   --full-samples \
   --full-resolution \
   --sun-energy 6 \

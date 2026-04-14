@@ -20,7 +20,7 @@ All commands must be run from the `examples/snake_arcade/` directory.
 python generate_scene.py
 ```
 
-This generates `generated/snake_arcade.vox`.
+This generates `generated/snakeArcade.vox`.
 
 You can open this file in MagicaVoxel to preview it.
 
@@ -30,12 +30,12 @@ Render the scene as a single, lower quality image to preview it:
 
 PowerShell:
 ```pwsh
-Vox2Pictoria generated/snake_arcade.vox --scene-test-run --sun-energy 3.85 --sun-color 0.4 0.5 1.0 --ambient-light-strength 0.7 --ambient-light-color 0.4 0.5 1.0 --emission-camera-cap 5.0 --emission-bounce-multiplier 4.0 --tone-mapper AgX -o rendered
+Vox2Pictoria generated/snakeArcade.vox --scene-test-run --sun-energy 3.85 --sun-color 0.4 0.5 1.0 --ambient-light-strength 0.7 --ambient-light-color 0.4 0.5 1.0 --emission-camera-cap 5.0 --emission-bounce-multiplier 4.0 --tone-mapper AgX -o rendered
 ```
 
 Bash:
 ```bash
-Vox2Pictoria generated/snake_arcade.vox \
+Vox2Pictoria generated/snakeArcade.vox \
   --scene-test-run \
   --sun-energy 3.85 \
   --sun-color 0.4 0.5 1.0 \
@@ -55,12 +55,12 @@ Full render (this could take several hours, depending on your hardware):
 
 PowerShell:
 ```pwsh
-Vox2Pictoria generated/snake_arcade.vox --full-samples --full-resolution --sun-energy 3.85 --sun-color 0.4 0.5 1.0 --ambient-light-strength 0.7 --ambient-light-color 0.4 0.5 1.0 --emission-camera-cap 5.0 --emission-bounce-multiplier 4.0 --tone-mapper AgX -o rendered
+Vox2Pictoria generated/snakeArcade.vox --full-samples --full-resolution --sun-energy 3.85 --sun-color 0.4 0.5 1.0 --ambient-light-strength 0.7 --ambient-light-color 0.4 0.5 1.0 --emission-camera-cap 5.0 --emission-bounce-multiplier 4.0 --tone-mapper AgX -o rendered
 ```
 
 Bash:
 ```bash
-Vox2Pictoria generated/snake_arcade.vox \
+Vox2Pictoria generated/snakeArcade.vox \
   --full-samples \
   --full-resolution \
   --sun-energy 3.85 \

@@ -23,7 +23,7 @@ All commands must be run from the `examples/` directory.
 python maze/generate_zone_voxs.py
 ```
 
-This generates four `.vox` files in `maze/generated/zones/`: `zone_blue.vox`, `zone_green.vox`, `zone_pink.vox`, and `zone_yellow.vox`.
+This generates four `.vox` files in `maze/generated/zones/`: `zoneBlue.vox`, `zoneGreen.vox`, `zonePink.vox`, and `zoneYellow.vox`.
 
 You can open these files in MagicaVoxel to preview them.
 
@@ -33,17 +33,17 @@ Render the combined scene as a single, lower quality image to preview it:
 
 PowerShell:
 ```pwsh
-Vox2Pictoria --combine "maze/generated/zones/zone_pink.vox 560 592" "maze/generated/zones/zone_green.vox 560 -528" "maze/generated/zones/zone_blue.vox -560 592" "maze/generated/zones/zone_yellow.vox -560 -528" --scene-test-run --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58
+Vox2Pictoria --combine "maze/generated/zones/zonePink.vox 560 592" "maze/generated/zones/zoneGreen.vox 560 -528" "maze/generated/zones/zoneBlue.vox -560 592" "maze/generated/zones/zoneYellow.vox -560 -528" --scene-test-run --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58
 ```
 
 Bash:
 ```bash
 Vox2Pictoria \
   --combine \
-    "maze/generated/zones/zone_pink.vox 560 592" \
-    "maze/generated/zones/zone_green.vox 560 -528" \
-    "maze/generated/zones/zone_blue.vox -560 592" \
-    "maze/generated/zones/zone_yellow.vox -560 -528" \
+    "maze/generated/zones/zonePink.vox 560 592" \
+    "maze/generated/zones/zoneGreen.vox 560 -528" \
+    "maze/generated/zones/zoneBlue.vox -560 592" \
+    "maze/generated/zones/zoneYellow.vox -560 -528" \
   --scene-test-run \
   --sun-energy 1 \
   --sun-color 1 0.82 0.58 \
@@ -59,17 +59,17 @@ Full render (this could take several hours, depending on your hardware):
 
 PowerShell:
 ```pwsh
-Vox2Pictoria --combine "maze/generated/zones/zone_pink.vox 560 592" "maze/generated/zones/zone_green.vox 560 -528" "maze/generated/zones/zone_blue.vox -560 592" "maze/generated/zones/zone_yellow.vox -560 -528" --full-samples --full-resolution --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58
+Vox2Pictoria --combine "maze/generated/zones/zonePink.vox 560 592" "maze/generated/zones/zoneGreen.vox 560 -528" "maze/generated/zones/zoneBlue.vox -560 592" "maze/generated/zones/zoneYellow.vox -560 -528" --full-samples --full-resolution --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58
 ```
 
 Bash:
 ```bash
 Vox2Pictoria \
   --combine \
-    "maze/generated/zones/zone_pink.vox 560 592" \
-    "maze/generated/zones/zone_green.vox 560 -528" \
-    "maze/generated/zones/zone_blue.vox -560 592" \
-    "maze/generated/zones/zone_yellow.vox -560 -528" \
+    "maze/generated/zones/zonePink.vox 560 592" \
+    "maze/generated/zones/zoneGreen.vox 560 -528" \
+    "maze/generated/zones/zoneBlue.vox -560 592" \
+    "maze/generated/zones/zoneYellow.vox -560 -528" \
   --full-samples \
   --full-resolution \
   --sun-energy 1 \
