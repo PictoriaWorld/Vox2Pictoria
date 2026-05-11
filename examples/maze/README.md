@@ -1,49 +1,47 @@
 # Maze
 
-## Overview
+A maze scene that demonstrates Vox2Pictoria's `.vox` combining feature.
 
-MagicaVoxel maze scene designed for testing Vox2Pictoria's `.vox` combining feature.
+MagicaVoxel limits scenes to 2000x2000x1000 voxels. Scenes that exceed this — like this maze — must be split into multiple `.vox` files. This example splits the maze into four color-coded zones that are combined at render time using the `--combine` option.
 
-Why combine multiple .vox files? MagicaVoxel limits scenes to 2000x2000x1000. Scenes may exceed that - like this maze scene. In this case, we split the maze into four parts. We've arbitrarily named each part a "zone".
-
-*Note: this example has only been tested on Windows, if you encounter issues on macOS/Linux, feel free to open an issue or submit a PR.*
+*Note: this example has only been tested on Windows. If you encounter issues on macOS/Linux, feel free to open an issue or submit a PR.*
 
 ## Prerequisites
-- **Python 3**. Required to run the zone generator script. Download it from [python.org](https://www.python.org/downloads/).
-- **Pillow** Python library. Required to run the zone generator script. Install it with `pip install Pillow`.
-- **Cinzel** font. Required for text in the scene. Download it from [Google Fonts](https://fonts.google.com/specimen/Cinzel), unzip, and install `Cinzel-VariableFont_wght.ttf`.
 
-## Quick start
+Before using this example, make sure you have completed the following sections in the [main README](../../README.md):
 
-All commands must be run from the `examples/` directory.
+- **[Installation](../../README.md#installation)** — download and set up Vox2Pictoria
+- **[MagicaVoxel Scene Setup](../../README.md#magicavoxel-scene-setup)** — understand how MagicaVoxel scenes map to Pictoria (optional, but recommended)
 
-### 1. Generate zones
+You should also have [MagicaVoxel](https://ephtracy.github.io/) installed if you want to preview the zones before rendering.
 
-```
-python maze/generate_zone_voxs.py
-```
+## Previewing
 
-This generates four `.vox` files in `maze/generated/zones/`: `zoneBlue.vox`, `zoneGreen.vox`, `zonePink.vox`, and `zoneYellow.vox`.
+Open any of the zone `.vox` files in MagicaVoxel to explore them individually: `zoneBlue.vox`, `zoneGreen.vox`, `zonePink.vox`, `zoneYellow.vox`.
 
-You can open these files in MagicaVoxel to preview them.
+## Rendering
 
-### 2. Test Render
+All commands should be run from the `examples/maze/` directory. See [Arguments](../../README.md#arguments) in the main README for details on all command options.
 
-Render the combined scene as a single, lower quality image to preview it:
+The `--combine` option takes a list of quoted strings, each containing a `.vox` path and its center position in the combined scene.
+
+### 1. Test render
+
+Generate a single overview image at low quality to verify the combined scene looks correct:
 
 PowerShell:
 ```pwsh
-Vox2Pictoria --combine "maze/generated/zones/zonePink.vox 560 592" "maze/generated/zones/zoneGreen.vox 560 -528" "maze/generated/zones/zoneBlue.vox -560 592" "maze/generated/zones/zoneYellow.vox -560 -528" --scene-test-run --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58
+Vox2Pictoria --combine "zonePink.vox 560 592" "zoneGreen.vox 560 -528" "zoneBlue.vox -560 592" "zoneYellow.vox -560 -528" --scene-test-run --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58
 ```
 
 Bash:
 ```bash
 Vox2Pictoria \
   --combine \
-    "maze/generated/zones/zonePink.vox 560 592" \
-    "maze/generated/zones/zoneGreen.vox 560 -528" \
-    "maze/generated/zones/zoneBlue.vox -560 592" \
-    "maze/generated/zones/zoneYellow.vox -560 -528" \
+    "zonePink.vox 560 592" \
+    "zoneGreen.vox 560 -528" \
+    "zoneBlue.vox -560 592" \
+    "zoneYellow.vox -560 -528" \
   --scene-test-run \
   --sun-energy 1 \
   --sun-color 1 0.82 0.58 \
@@ -51,25 +49,25 @@ Vox2Pictoria \
   --ambient-light-color 1 0.82 0.58
 ```
 
-Please find explanations for the command options in the [Vox2Pictoria documentation](../../README.md).
+The output image will be at `temp/renders/scene.png`.
 
-### 3. Full Render
+### 2. Full render
 
-Full render (this could take several hours, depending on your hardware):
+Once satisfied with the preview, run a full quality render:
 
 PowerShell:
 ```pwsh
-Vox2Pictoria --combine "maze/generated/zones/zonePink.vox 560 592" "maze/generated/zones/zoneGreen.vox 560 -528" "maze/generated/zones/zoneBlue.vox -560 592" "maze/generated/zones/zoneYellow.vox -560 -528" --full-samples --full-resolution --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58
+Vox2Pictoria --combine "zonePink.vox 560 592" "zoneGreen.vox 560 -528" "zoneBlue.vox -560 592" "zoneYellow.vox -560 -528" --full-samples --full-resolution --sun-energy 1 --sun-color 1 0.82 0.58 --ambient-light-strength 0.4 --ambient-light-color 1 0.82 0.58
 ```
 
 Bash:
 ```bash
 Vox2Pictoria \
   --combine \
-    "maze/generated/zones/zonePink.vox 560 592" \
-    "maze/generated/zones/zoneGreen.vox 560 -528" \
-    "maze/generated/zones/zoneBlue.vox -560 592" \
-    "maze/generated/zones/zoneYellow.vox -560 -528" \
+    "zonePink.vox 560 592" \
+    "zoneGreen.vox 560 -528" \
+    "zoneBlue.vox -560 592" \
+    "zoneYellow.vox -560 -528" \
   --full-samples \
   --full-resolution \
   --sun-energy 1 \
@@ -77,3 +75,7 @@ Vox2Pictoria \
   --ambient-light-strength 0.4 \
   --ambient-light-color 1 0.82 0.58
 ```
+
+*This can take several hours depending on your hardware.*
+
+The final `.pstr` files will be in `bin/StructureDefinitions/`. See [Usage](../../README.md#usage) in the main README for how to import these into Pictoria.

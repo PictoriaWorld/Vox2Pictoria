@@ -1,41 +1,40 @@
 # Space Station
 
-## Overview
+A futuristic minimalist space station spawn lobby for the Pictoria MMO. Clean white surfaces, green planter beds, and emissive light accents. Players arrive here and interact with a help desk and 4 info kiosks.
 
-Futuristic minimalist space station spawn lobby for Pictoria MMO. Players arrive here and interact with a help desk and 4 info kiosks. Theme: clean white surfaces, green planter beds, emissive light accents.
+*Note: this example has only been tested on Windows. If you encounter issues on macOS/Linux, feel free to open an issue or submit a PR.*
 
 ## Prerequisites
-- **Python 3**. Required to run the scene generator script. Download it from [python.org](https://www.python.org/downloads/).
-- **Pillow** Python library. Required for logo and icon rasterization. Install it with `pip install Pillow`.
-- **ImageMagick** (optional). Used to re-rasterize SVG icons at specific sizes. Download from [imagemagick.org](https://imagemagick.org/script/download.php).
 
-## Quick start
+Before using this example, make sure you have completed the following sections in the [main README](../../README.md):
 
-All commands must be run from the `examples/space_station/` directory.
+- **[Installation](../../README.md#installation)** — download and set up Vox2Pictoria
+- **[MagicaVoxel Scene Setup](../../README.md#magicavoxel-scene-setup)** — understand how MagicaVoxel scenes map to Pictoria (optional, but recommended)
 
-### 1. Generate scene
+You should also have [MagicaVoxel](https://ephtracy.github.io/) installed if you want to preview the scene before rendering.
 
-```
-python generate_scene.py
-```
+## Previewing
 
-This generates `generated/spaceStation.vox` and `generated/palette.png`.
+Open `spaceStation.vox` in MagicaVoxel to explore the scene before rendering.
 
-You can open `spaceStation.vox` in MagicaVoxel to preview it.
+## Rendering
 
-### 2. Test Render
+All commands should be run from the `examples/space_station/` directory. See [Arguments](../../README.md#arguments) in the main README for details on all command options.
 
-Render the scene as a single, lower quality image to preview it:
+This scene uses bright sun energy with zero ambient light and a high emission camera cap, relying on the emissive surfaces to provide most of the interior lighting.
+
+### 1. Test render
+
+Generate a single overview image at low quality to verify the scene looks correct:
 
 PowerShell:
 ```pwsh
-Vox2Pictoria generated/spaceStation.vox --scene-test-run --sun-energy 6 --sun-color 0.9 0.92 1.0 --ambient-light-strength 0 --ambient-light-color 0.85 0.88 1.0 --emission-camera-cap 100 --emission-bounce-multiplier 2.0 --tone-mapper AgX
+Vox2Pictoria spaceStation.vox --scene-test-run --sun-energy 6 --sun-color 0.9 0.92 1.0 --ambient-light-strength 0 --ambient-light-color 0.85 0.88 1.0 --emission-camera-cap 100 --emission-bounce-multiplier 2.0 --tone-mapper AgX
 ```
 
 Bash:
 ```bash
-Vox2Pictoria \
-  generated/spaceStation.vox \
+Vox2Pictoria spaceStation.vox \
   --scene-test-run \
   --sun-energy 6 \
   --sun-color 0.9 0.92 1.0 \
@@ -46,21 +45,20 @@ Vox2Pictoria \
   --tone-mapper AgX
 ```
 
-Please find explanations for the command options in the [Vox2Pictoria documentation](../../README.md).
+The output image will be at `temp/renders/scene.png`.
 
-### 3. Full Render
+### 2. Full render
 
-Full render (this could take several hours, depending on your hardware):
+Once satisfied with the preview, run a full quality render:
 
 PowerShell:
 ```pwsh
-Vox2Pictoria generated/spaceStation.vox --full-samples --full-resolution --sun-energy 6 --sun-color 0.9 0.92 1.0 --ambient-light-strength 0 --ambient-light-color 0.85 0.88 1.0 --emission-camera-cap 100 --emission-bounce-multiplier 2.0 --tone-mapper AgX
+Vox2Pictoria spaceStation.vox --full-samples --full-resolution --sun-energy 6 --sun-color 0.9 0.92 1.0 --ambient-light-strength 0 --ambient-light-color 0.85 0.88 1.0 --emission-camera-cap 100 --emission-bounce-multiplier 2.0 --tone-mapper AgX
 ```
 
 Bash:
 ```bash
-Vox2Pictoria \
-  generated/spaceStation.vox \
+Vox2Pictoria spaceStation.vox \
   --full-samples \
   --full-resolution \
   --sun-energy 6 \
@@ -71,3 +69,7 @@ Vox2Pictoria \
   --emission-bounce-multiplier 2.0 \
   --tone-mapper AgX
 ```
+
+*This can take several hours depending on your hardware.*
+
+The final `.pstr` files will be in `bin/StructureDefinitions/`. See [Usage](../../README.md#usage) in the main README for how to import these into Pictoria.

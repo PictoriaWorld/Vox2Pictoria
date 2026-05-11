@@ -311,6 +311,19 @@ MagicaVoxel supports several material types. Of those types, Vox2Pictoria can cu
 
 The following material types are **not** currently supported: Blend and Cloud. Palette colors set to these types will render as diffuse.
 
+## Examples
+
+The `examples/` directory contains `.vox` scenes you can render with Vox2Pictoria:
+
+| Example | Description |
+|---------|-------------|
+| [Garden](examples/garden/) | A garden scene. Also included in the release as a sample. |
+| [Maze](examples/maze/) | A large maze split into 4 zones, demonstrating Vox2Pictoria's `--combine` feature. |
+| [Snake Arcade](examples/snake_arcade/) | A rainforest scene with a Snake arcade machine, rendered with moonlit night lighting. The example directory includes an embeddable snake game. |
+| [Space Station](examples/space_station/) | A futuristic space station lobby with emissive lighting and clean surfaces. |
+
+Each example directory contains `.vox` files and a README with rendering instructions.
+
 ## Development
 
 This is for advanced users who want to build or modify Vox2Pictoria.
